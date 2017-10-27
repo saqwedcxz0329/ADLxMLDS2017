@@ -1,10 +1,11 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, TimeDistributed, Bidirectional, Conv2D, MaxPooling1D, Reshape
+from keras.layers import Dense, LSTM, TimeDistributed, Bidirectional, Conv1D, Conv2D, MaxPooling1D, MaxPooling2D, Reshape, Masking, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.utils import np_utils
 from keras.models import load_model
 import keras.preprocessing.sequence
 import numpy as np
+import tensorflow as tf
 
 class Loader():
     def __init__(self, data_folder):
@@ -19,7 +20,7 @@ class Loader():
         instance_label = self.parse_train_label(train_file_path)
         prev_sentence_id = None
         max_length = 0
-        sentence, label, X, Y = [], [], [], []
+        sentence, label, X, Y, X_length = [], [], [], [], []
         with open(feature_file_path) as file:
             for line in file:
                 line = line.strip()
@@ -30,27 +31,26 @@ class Loader():
                 sentence_id = tmp[0] + '_' + tmp[1]
                 # print('prev: {}\ncur: {}'.format(prev_sentence_id, sentence_id))
                 # print('=========')
-                if prev_sentence_id is None:
-                    prev_sentence_id = sentence_id
-                if prev_sentence_id == sentence_id:
-                    feature = np.array(feature, dtype='float32')
-                    feature = (feature - np.mean(feature)) / np.std(feature)
-                    sentence.append(feature)
-                    label.append(self.cate_idx[instance_label[instance_id]])
-                else:
+                if prev_sentence_id is not None and prev_sentence_id != sentence_id:
                     X.append(sentence)
+                    X_length.append(len(sentence))
                     Y.append(np_utils.to_categorical(label, self.class_num))
                     # print('sentence length: {}'.format(len(sentence)))
                     max_length = max(len(sentence), max_length)
                     sentence = []
                     label = []
+                feature = np.array(feature, dtype='float32')
+                feature = (feature - np.mean(feature)) / np.std(feature)
+                sentence.append(feature)
+                label.append(self.cate_idx[instance_label[instance_id]])
                 prev_sentence_id = sentence_id
 
             # append last sentence
             X.append(sentence)
+            X_length.append(len(sentence))
             Y.append(np_utils.to_categorical(label, self.class_num))
             max_length = max(len(sentence), max_length)
-        return X, Y, max_length
+        return X, X_length, Y, max_length
 
     def load_testing_data(self, feature_file_path, test_file_path):
         prev_sentence_id = None
@@ -65,16 +65,13 @@ class Loader():
                 feature = tmp[1:]
                 tmp = instance_id.split('_')
                 sentence_id = tmp[0] + '_' + tmp[1]
-                if prev_sentence_id is None:
-                    prev_sentence_id = sentence_id
-                if prev_sentence_id == sentence_id:
-                    feature = np.array(feature, dtype='float32')
-                    feature = (feature - np.mean(feature)) / np.std(feature)
-                    sentence.append(feature)
-                else:
+                if prev_sentence_id is not None and prev_sentence_id != sentence_id:
                     sentence_feature[prev_sentence_id] = sentence
                     max_length = max(len(sentence), max_length)
                     sentence = []
+                feature = np.array(feature, dtype='float32')
+                feature = (feature - np.mean(feature)) / np.std(feature)
+                sentence.append(feature)
                 prev_sentence_id = sentence_id
 
             # append last sentence
@@ -218,16 +215,24 @@ class Loader():
 data_folder = './data'
 batch_size = 128
 class_num = 48 + 1 # 1~48 + padding 0
+validation_size = 100
+model_name = 'cnn_rnn_fabank_model.h5'
 
 def build_model(timesteps, vector_size):
     print('Build model...')
     model = Sequential()
-    model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', activation='relu', input_shape=(timesteps, vector_size, 1)))
+
+    model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
+    model.add(Activation("relu"))
+    # model.add(BatchNormalization())
+    model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
+    model.add(Activation("relu"))
+    # model.add(BatchNormalization())
     model.add(Reshape((timesteps, -1)))
-    # model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
-    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), input_shape=(timesteps, vector_size)))
-    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), input_shape=(timesteps, vector_size)))
-    model.add(TimeDistributed(Dense(class_num, activation='softmax'), input_shape=(timesteps, vector_size)))
+    # model.add(Masking(mask_value=0.))
+    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
+    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
+    model.add(TimeDistributed(Dense(class_num, activation='softmax')))
     # model.add(LSTM(64, return_sequences=True))
     # model.add(LSTM(64, return_sequences=False))
     # model.add(Dense(class_num, activation='softmax'))
@@ -235,49 +240,72 @@ def build_model(timesteps, vector_size):
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
                   optimizer='rmsprop',
-                  metrics=['accuracy'])
+                  metrics=['accuracy'],
+                  sample_weight_mode='temporal'
+                  )
     return model
 
 def train():
     loader = Loader(data_folder)
-    X, Y, max_length = loader.load_training_data(data_folder + '/mfcc/train.ark', data_folder + '/train.lab')
+    X, X_length, Y, max_length = loader.load_training_data(data_folder + '/fbank/train.ark', data_folder + '/train.lab')
     print('max length: {}'.format(max_length))
 
     X_padded = keras.preprocessing.sequence.pad_sequences(X, dtype='float32', maxlen=max_length, padding='post')
     Y_padded = keras.preprocessing.sequence.pad_sequences(Y, dtype='float32', maxlen=max_length, padding='post')
+    X_padded = np.expand_dims(X_padded, axis=3)
+
+    print('X length: {}'.format(len(X_length)))
+    print('Y length: {}'.format(len(Y_padded)))
+    sample_weightes = []
+    for length, sentence in zip(X_length, Y_padded):
+        sentence[length:, 0] = 1.
+        weights = [0.] * len(sentence)
+        weights[:length] = [1. for _ in range(length)]
+        sample_weightes.append(weights)
+    sample_weightes = np.array(sample_weightes, dtype='float32')
+    sample_weightes = sample_weightes[:X_padded.shape[0]-validation_size]
+
+    x_val = X_padded[X_padded.shape[0]-validation_size:]
+    y_val = Y_padded[X_padded.shape[0]-validation_size:]
+    x_train = X_padded[:X_padded.shape[0]-validation_size]
+    y_train = Y_padded[:X_padded.shape[0]-validation_size]
     print('X shape: {}'.format(X_padded.shape))
     print('Y shape: {}'.format(Y_padded.shape))
 
     lstm_model = build_model(X_padded.shape[1], X_padded.shape[2])
-    print('Train...')
+    print(lstm_model.summary())
 
-    X_padded = np.expand_dims(X_padded, axis=3)
-    print('X expand shape: {}'.format(X_padded.shape))
+    callbacks = [
+                keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto'),
+                keras.callbacks.ModelCheckpoint(model_name, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+                ]
+    lstm_model.fit(x_train, y_train,
+          batch_size=batch_size,
+          epochs=50, 
+          validation_data=(x_val, y_val),
+          # callbacks=callbacks,
+          sample_weight=sample_weightes
+          )
 
-    lstm_model.fit(X_padded, Y_padded,
-              batch_size=batch_size,
-              epochs=100)
-    score, acc = lstm_model.evaluate(X_padded, Y_padded, batch_size=batch_size)
-    print ("score: %d" %score)
-    print ("acc: %d" %acc)
-
-    lstm_model.save('rnn_model.h5')
-    # loader.parse_feature('./data/mfcc/train.ark')
+    lstm_model.save(model_name)
+    # loader.parse_feature('./data/fbank/train.ark')
     # instance_label = loader.parse_train_label('./data/train.lab')
     # loader.parse_phone_char('./data/48phone_char.map')
     # loader.parse_phone_39('./data/48_39.map')
 
 def test():
     loader = Loader(data_folder)
-    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/mfcc/test.ark', data_folder + '/sample.csv')
-    Test_X_padded = keras.preprocessing.sequence.pad_sequences(Test_X, dtype='float32', maxlen=776, padding='post')
+    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/fbank/test.ark', data_folder + '/sample.csv')
+    Test_X_padded = keras.preprocessing.sequence.pad_sequences(Test_X, dtype='float32', maxlen=777, padding='post')
+    Test_X_padded = np.expand_dims(Test_X_padded, axis=3)
     print('max length: {}'.format(max_length))
     print('Test X shape: {}'.format(Test_X_padded.shape))
 
-    lstm_model = load_model('rnn_model.h5')
+    lstm_model = load_model(model_name)
     Predict_Y = lstm_model.predict(Test_X_padded)
 
     loader.transfer_csv(Predict_Y, Test_X_length, Test_X_id)
+    print('Finished')
 
 if __name__ == '__main__':
     # loader = Loader()
