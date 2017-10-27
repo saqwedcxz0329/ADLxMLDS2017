@@ -14,7 +14,7 @@ class Loader():
         self.cate_idx = {'aa': 1,'ae': 2,'ah': 3,'ao': 4,'aw': 5,'ax': 6,'ay': 7,'b': 8,'ch': 9,'cl': 10,'d': 11,'dh': 12,'dx': 13,'eh': 14,'el': 15,'en': 16,'epi': 17,'er': 18,'ey': 19,'f': 20,'g': 21,'hh': 22,'ih': 23,'ix': 24,'iy': 25,'jh': 26,'k': 27,'l': 28,'m': 29,'n': 30,'ng': 31,'ow': 32,'oy': 33,'p': 34,'r': 35,'s': 36,'sh': 37,'sil': 38,'t': 39,'th': 40,'uh': 41,'uw': 42,'v': 43,'vcl': 44,'w': 45,'y': 46,'z': 47,'zh': 48}
         self.class_num = len(self.cate_idx) + 1
 
-        self.parse_phone_39(self.data_folder + '/48_39.map')
+        self.parse_phone_39(self.data_folder + '/phones/48_39.map')
         self.parse_phone_char(self.data_folder + '/48phone_char.map')
 
     def load_training_data(self, feature_file_path, train_file_path):
@@ -223,20 +223,9 @@ def build_model(timesteps, vector_size):
     print('Build model...')
     model = Sequential()
 
-    # model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
-    # model.add(BatchNormalization())
-    # model.add(Activation("tanh"))
-    # model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
-    # model.add(BatchNormalization())
-    # model.add(Activation("tanh"))
-    # model.add(Reshape((timesteps, -1)))
-    # model.add(Masking(mask_value=0.))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), input_shape=(timesteps, vector_size)))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
     model.add(TimeDistributed(Dense(class_num, activation='softmax')))
-    # model.add(LSTM(64, return_sequences=True))
-    # model.add(LSTM(64, return_sequences=False))
-    # model.add(Dense(class_num, activation='softmax'))
 
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
@@ -248,7 +237,7 @@ def build_model(timesteps, vector_size):
 
 def train():
     loader = Loader(data_folder)
-    X, X_length, Y, max_length = loader.load_training_data(data_folder + '/fbank/train.ark', data_folder + '/train.lab')
+    X, X_length, Y, max_length = loader.load_training_data(data_folder + '/fbank/train.ark', data_folder + '/label/train.lab')
     print('max length: {}'.format(max_length))
 
     X_padded = keras.preprocessing.sequence.pad_sequences(X, dtype='float32', maxlen=max_length, padding='post')
@@ -283,7 +272,7 @@ def train():
           batch_size=batch_size,
           epochs=40, 
           validation_data=(x_val, y_val),
-          # callbacks=callbacks,
+          callbacks=callbacks
           # sample_weight=sample_weightes
           )
 
