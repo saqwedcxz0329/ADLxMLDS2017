@@ -1,5 +1,6 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, TimeDistributed, Bidirectional, Conv1D, Conv2D, MaxPooling1D, MaxPooling2D, Reshape, Masking, Activation
+from keras.layers import Dense, LSTM, TimeDistributed, Bidirectional, Conv2D, MaxPooling2D
+from keras.layers import Reshape, Masking, Activation, Dropout
 from keras.layers.normalization import BatchNormalization
 from keras.utils import np_utils
 from keras.models import load_model
@@ -224,19 +225,19 @@ def build_model(timesteps, vector_size):
     model = Sequential()
 
     model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
+    model.add(Dropout(0.5))
     model.add(BatchNormalization())
     model.add(Activation("tanh"))
     model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
+    model.add(Dropout(0.5))
     model.add(BatchNormalization())
     model.add(Activation("tanh"))
     model.add(Reshape((timesteps, -1)))
-    # model.add(Masking(mask_value=0.))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
+    model.add(Dropout(0.5))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
+    model.add(Dropout(0.5))
     model.add(TimeDistributed(Dense(class_num, activation='softmax')))
-    # model.add(LSTM(64, return_sequences=True))
-    # model.add(LSTM(64, return_sequences=False))
-    # model.add(Dense(class_num, activation='softmax'))
 
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
@@ -277,22 +278,18 @@ def train():
     print(lstm_model.summary())
 
     callbacks = [
-                keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto'),
-                keras.callbacks.ModelCheckpoint(model_name, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+                keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0, patience=2, verbose=0, mode='auto'),
+                keras.callbacks.ModelCheckpoint(model_name, monitor='val_acc', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
                 ]
     lstm_model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=40, 
           validation_data=(x_val, y_val),
-          # callbacks=callbacks,
+          callbacks=callbacks,
           sample_weight=sample_weightes
           )
 
     lstm_model.save(model_name)
-    # loader.parse_feature('./data/fbank/train.ark')
-    # instance_label = loader.parse_train_label('./data/train.lab')
-    # loader.parse_phone_char('./data/48phone_char.map')
-    # loader.parse_phone_39('./data/48_39.map')
 
 def test():
     loader = Loader(data_folder)
@@ -309,8 +306,6 @@ def test():
     print('Finished')
 
 if __name__ == '__main__':
-    # loader = Loader()
-    # loader.parse_phone_char('./data/48phone_char.map')
     train()
     test()
         

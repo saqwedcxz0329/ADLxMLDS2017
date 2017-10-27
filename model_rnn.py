@@ -223,20 +223,9 @@ def build_model(timesteps, vector_size):
     print('Build model...')
     model = Sequential()
 
-    # model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
-    # model.add(BatchNormalization())
-    # model.add(Activation("tanh"))
-    # model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
-    # model.add(BatchNormalization())
-    # model.add(Activation("tanh"))
-    # model.add(Reshape((timesteps, -1)))
-    # model.add(Masking(mask_value=0.))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), input_shape=(timesteps, vector_size)))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
     model.add(TimeDistributed(Dense(class_num, activation='softmax')))
-    # model.add(LSTM(64, return_sequences=True))
-    # model.add(LSTM(64, return_sequences=False))
-    # model.add(Dense(class_num, activation='softmax'))
 
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
@@ -283,7 +272,7 @@ def train():
           batch_size=batch_size,
           epochs=40, 
           validation_data=(x_val, y_val),
-          # callbacks=callbacks,
+          callbacks=callbacks
           # sample_weight=sample_weightes
           )
 
