@@ -6,6 +6,7 @@ from keras.models import load_model
 import keras.preprocessing.sequence
 import numpy as np
 import tensorflow as tf
+import sys
 
 class Loader():
     def __init__(self, data_folder):
@@ -216,18 +217,18 @@ data_folder = './data'
 batch_size = 128
 class_num = 48 + 1 # 1~48 + padding 0
 validation_size = 100
-model_name = 'cnn_rnn_fabank_model.h5'
+model_name = sys.argv[1]
 
 def build_model(timesteps, vector_size):
     print('Build model...')
     model = Sequential()
 
     model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
-    model.add(Activation("relu"))
-    # model.add(BatchNormalization())
+    model.add(BatchNormalization())
+    model.add(Activation("tanh"))
     model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
-    model.add(Activation("relu"))
-    # model.add(BatchNormalization())
+    model.add(BatchNormalization())
+    model.add(Activation("tanh"))
     model.add(Reshape((timesteps, -1)))
     # model.add(Masking(mask_value=0.))
     model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
@@ -281,7 +282,7 @@ def train():
                 ]
     lstm_model.fit(x_train, y_train,
           batch_size=batch_size,
-          epochs=50, 
+          epochs=40, 
           validation_data=(x_val, y_val),
           # callbacks=callbacks,
           sample_weight=sample_weightes
