@@ -53,9 +53,9 @@ class Loader():
             max_length = max(len(sentence), max_length)
         return X, X_length, Y, max_length
 
-    def load_testing_data(self, feature_file_path, test_file_path):
+    def load_testing_data(self, feature_file_path):
         prev_sentence_id = None
-        sentence = []
+        X, X_length, X_id, sentence = [], [], [], []
         sentence_feature = {}
         max_length = 0
         with open(feature_file_path) as file:
@@ -68,6 +68,9 @@ class Loader():
                 sentence_id = tmp[0] + '_' + tmp[1]
                 if prev_sentence_id is not None and prev_sentence_id != sentence_id:
                     sentence_feature[prev_sentence_id] = sentence
+                    X.append(sentence)
+                    X_length.append(len(sentence))
+                    X_id.append(prev_sentence_id)
                     max_length = max(len(sentence), max_length)
                     sentence = []
                 feature = np.array(feature, dtype='float32')
@@ -77,18 +80,10 @@ class Loader():
 
             # append last sentence
             sentence_feature[prev_sentence_id] = sentence
+            X.append(sentence)
+            X_length.append(len(sentence))
+            X_id.append(prev_sentence_id)
 
-        X = []
-        X_length = []
-        X_id = []
-        with open(test_file_path) as file:
-            file.readline()
-            for line in file:
-                line = line.strip()
-                sentence_id = line[:-1]
-                X.append(sentence_feature[sentence_id])
-                X_length.append(len(sentence_feature[sentence_id]))
-                X_id.append(sentence_id)
         return X, X_length, X_id, max_length
 
     def transfer_csv(self, Y, X_length, X_id):
@@ -280,7 +275,7 @@ def train():
 
 def test():
     loader = Loader(data_folder)
-    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/fbank/test.ark', data_folder + '/sample.csv')
+    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/fbank/test.ark')
     Test_X_padded = keras.preprocessing.sequence.pad_sequences(Test_X, dtype='float32', maxlen=777, padding='post')
     print('max length: {}'.format(max_length))
     print('Test X shape: {}'.format(Test_X_padded.shape))

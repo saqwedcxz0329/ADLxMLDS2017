@@ -54,9 +54,9 @@ class Loader():
             max_length = max(len(sentence), max_length)
         return X, X_length, Y, max_length
 
-    def load_testing_data(self, feature_file_path, test_file_path):
+    def load_testing_data(self, feature_file_path):
         prev_sentence_id = None
-        sentence = []
+        X, X_length, X_id, sentence = [], [], [], []
         sentence_feature = {}
         max_length = 0
         with open(feature_file_path) as file:
@@ -69,6 +69,9 @@ class Loader():
                 sentence_id = tmp[0] + '_' + tmp[1]
                 if prev_sentence_id is not None and prev_sentence_id != sentence_id:
                     sentence_feature[prev_sentence_id] = sentence
+                    X.append(sentence)
+                    X_length.append(len(sentence))
+                    X_id.append(prev_sentence_id)
                     max_length = max(len(sentence), max_length)
                     sentence = []
                 feature = np.array(feature, dtype='float32')
@@ -78,18 +81,10 @@ class Loader():
 
             # append last sentence
             sentence_feature[prev_sentence_id] = sentence
+            X.append(sentence)
+            X_length.append(len(sentence))
+            X_id.append(prev_sentence_id)
 
-        X = []
-        X_length = []
-        X_id = []
-        with open(test_file_path) as file:
-            file.readline()
-            for line in file:
-                line = line.strip()
-                sentence_id = line[:-1]
-                X.append(sentence_feature[sentence_id])
-                X_length.append(len(sentence_feature[sentence_id]))
-                X_id.append(sentence_id)
         return X, X_length, X_id, max_length
 
     def transfer_csv(self, Y, X_length, X_id):
@@ -215,7 +210,7 @@ class Loader():
                 self.phone_39[phone] = char
 
 data_folder = './data'
-batch_size = 128
+batch_size = 64
 class_num = 48 + 1 # 1~48 + padding 0
 validation_size = 100
 model_name = sys.argv[1]
@@ -225,11 +220,11 @@ def build_model(timesteps, vector_size):
     model = Sequential()
 
     model.add(Conv2D(filters=10, kernel_size=[5, 5], padding='same', input_shape=(timesteps, vector_size, 1)))
-    model.add(Dropout(0.5))
+    # model.add(Dropout(0.5))
     model.add(BatchNormalization())
     model.add(Activation("tanh"))
     model.add(Conv2D(filters=15, kernel_size=[5, 5], padding='same'))
-    model.add(Dropout(0.5))
+    # model.add(Dropout(0.5))
     model.add(BatchNormalization())
     model.add(Activation("tanh"))
     model.add(Reshape((timesteps, -1)))
@@ -241,7 +236,7 @@ def build_model(timesteps, vector_size):
 
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
+                  optimizer='adam',
                   metrics=['accuracy'],
                   sample_weight_mode='temporal'
                   )
@@ -293,7 +288,7 @@ def train():
 
 def test():
     loader = Loader(data_folder)
-    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/fbank/test.ark', data_folder + '/sample.csv')
+    Test_X, Test_X_length, Test_X_id, max_length = loader.load_testing_data(data_folder + '/fbank/test.ark')
     Test_X_padded = keras.preprocessing.sequence.pad_sequences(Test_X, dtype='float32', maxlen=777, padding='post')
     Test_X_padded = np.expand_dims(Test_X_padded, axis=3)
     print('max length: {}'.format(max_length))
