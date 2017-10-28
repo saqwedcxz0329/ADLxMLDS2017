@@ -11,7 +11,7 @@ from Loader import Loader
 
 data_folder = sys.argv[1] # change to sys.argv
 output_filename = sys.argv[2]
-model_name = './cnn_model.h5'
+model_name = './best_model.h5'
 batch_size = 64
 epochs = 15
 class_num = 48 + 1 # 1~48 + padding 0
