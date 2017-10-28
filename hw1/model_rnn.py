@@ -41,6 +41,9 @@ def train():
     print('X length: {}'.format(len(X_length)))
     print('Y length: {}'.format(len(Y_padded)))
 
+    for length, sentence in zip(X_length, Y_padded):
+        sentence[length:, 0] = 1.
+
     x_val = X_padded[X_padded.shape[0]-validation_size:]
     y_val = Y_padded[X_padded.shape[0]-validation_size:]
     x_train = X_padded[:X_padded.shape[0]-validation_size]
