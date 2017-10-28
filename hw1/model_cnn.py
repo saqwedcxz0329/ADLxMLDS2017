@@ -75,15 +75,19 @@ def train():
                 keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0, patience=2, verbose=0, mode='auto'),
                 keras.callbacks.ModelCheckpoint(model_name, monitor='val_acc', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
                 ]
-    lstm_model.fit(x_train, y_train,
-          batch_size=batch_size,
-          epochs=40, 
-          validation_data=(x_val, y_val),
-          callbacks=callbacks,
-          sample_weight=sample_weightes
-          )
-
+    try:            
+        lstm_model.fit(x_train, y_train,
+              batch_size=batch_size,
+              epochs=40, 
+              validation_data=(x_val, y_val),
+              #callbacks=callbacks,
+              sample_weight=sample_weightes
+              )
+    except KeyboardInterrupt:
+        lstm_model.save(model_name)
+    
     lstm_model.save(model_name)
+
 
 def test():
     loader = Loader(data_folder)
