@@ -19,13 +19,13 @@ def build_model(timesteps, vector_size):
     print('Build model...')
     model = Sequential()
 
-    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True), input_shape=(timesteps, vector_size)))
-    model.add(Bidirectional(LSTM(256, activation='tanh', return_sequences=True)))
+    model.add(Bidirectional(LSTM(256, activation='tanh', dropout=0.5, return_sequences=True), input_shape=(timesteps, vector_size)))
+    model.add(Bidirectional(LSTM(256, activation='tanh', dropout=0.5, return_sequences=True)))
     model.add(TimeDistributed(Dense(class_num, activation='softmax')))
 
     # try using different optimizers and different optimizer configs
     model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
+                  optimizer='adam',
                   metrics=['accuracy'],
                   )
     return model
