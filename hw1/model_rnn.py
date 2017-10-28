@@ -8,10 +8,11 @@ import sys
 from Loader import Loader
 
 
-data_folder = './data'
-model_name = sys.argv[1]
+data_folder = sys.argv[1]
 output_filename = sys.argv[2]
+model_name = './rnn_model.h5'
 batch_size = 128
+epochs = 50
 class_num = 48 + 1 # 1~48 + padding 0
 validation_size = 100
 
@@ -60,7 +61,7 @@ def train():
                 ]
     lstm_model.fit(x_train, y_train,
           batch_size=batch_size,
-          epochs=40, 
+          epochs=epochs, 
           validation_data=(x_val, y_val),
           callbacks=callbacks
           )
