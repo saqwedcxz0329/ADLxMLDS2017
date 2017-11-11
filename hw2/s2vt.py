@@ -21,12 +21,13 @@ class S2VT(object):
         self.n_video_lstm_step=n_video_lstm_step
         self.n_caption_lstm_step=n_caption_lstm_step
 
-        with tf.device("/cpu:0"):
-            self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
-        #self.bemb = tf.Variable(tf.zeros([dim_hidden]), name='bemb')
-
         self.lstm1 = tf.nn.rnn_cell.BasicLSTMCell(dim_hidden, state_is_tuple=False)
         self.lstm2 = tf.nn.rnn_cell.BasicLSTMCell(dim_hidden, state_is_tuple=False)
+        # with tf.variable_scope(tf.get_variable_scope()) as scope:
+        with tf.device("/cpu:0"):
+            self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
+                # tf.get_variable_scope().reuse_variables()
+            #self.bemb = tf.Variable(tf.zeros([dim_hidden]), name='bemb')
 
         self.encode_image_W = tf.Variable( tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable( tf.zeros([dim_hidden]), name='encode_image_b')
@@ -53,27 +54,34 @@ class S2VT(object):
 
         ##############################  Encoding Stage ##################################
         for i in range(0, self.n_video_lstm_step):
-            if i > 0:
-                tf.get_variable_scope().reuse_variables()
+            # if i > 0:
 
             with tf.variable_scope("LSTM1"):
                 output1, state1 = self.lstm1(image_emb[:,i,:], state1)
+                tf.get_variable_scope().reuse_variables()
+                
 
             with tf.variable_scope("LSTM2"):
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+                tf.get_variable_scope().reuse_variables()
+                
 
         ############################# Decoding Stage ######################################
         for i in range(0, self.n_caption_lstm_step):
+            # with tf.variable_scope(tf.get_variable_scope()) as scope:
             with tf.device("/cpu:0"):
                 current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
 
-            tf.get_variable_scope().reuse_variables()
+            # tf.get_variable_scope().reuse_variables()
 
             with tf.variable_scope("LSTM1"):
                 output1, state1 = self.lstm1(padding, state1)
+                tf.get_variable_scope().reuse_variables()
 
             with tf.variable_scope("LSTM2"):
                 output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                tf.get_variable_scope().reuse_variables()
+                
 
             labels = tf.expand_dims(caption[:, i+1], 1)
             indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
