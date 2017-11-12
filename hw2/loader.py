@@ -21,8 +21,18 @@ class Loader(object):
         if id_to_captions is not None:
             return x, x_label
         return x
-
-
+    
+    def read_test_data(self, id_file, folder):
+        x = []
+        with open(id_file, 'r') as file:
+            for line in file:
+                viedo_id = line.strip()
+                full_path = folder + viedo_id + '.npy'
+                feature = np.load(full_path)
+                x.append(feature)
+            x = np.array(x, dtype='float32')
+        return x
+                
     def read_captions(self, file_name):
         id_to_captions = {}
         with open(file_name, 'r') as file:

@@ -5,6 +5,7 @@ import random
 
 import numpy as np
 import tensorflow as tf
+import pandas as pd
 from keras.preprocessing import sequence
 
 from loader import Loader
@@ -34,7 +35,6 @@ class S2VT(object):
 
     def build_model(self):
         video = tf.placeholder(tf.float32, [self.batch_size, self.n_video_lstm_step, self.dim_image])
-        # video_mask = tf.placeholder(tf.float32, [self.batch_size, self.n_video_lstm_step])
 
         caption = tf.placeholder(tf.int32, [self.batch_size, self.n_caption_lstm_step+1])
         caption_mask = tf.placeholder(tf.float32, [self.batch_size, self.n_caption_lstm_step+1])
@@ -59,7 +59,7 @@ class S2VT(object):
         loss = 0.0
         acc = 0.0
 
-        ##############################  Encoding Stage ##################################
+        #Encoding Stage
         for i in range(0, self.n_video_lstm_step):
             # if i > 0:
 
@@ -73,7 +73,7 @@ class S2VT(object):
                 tf.get_variable_scope().reuse_variables()
                 
 
-        ############################# Decoding Stage ######################################
+        #Decoding Stage
         for i in range(0, self.n_caption_lstm_step):
             # with tf.variable_scope(tf.get_variable_scope()) as scope:
             with tf.device("/cpu:0"):
@@ -110,7 +110,6 @@ class S2VT(object):
 
             # mask
             mask = tf.cast(caption_mask[:,i], dtype=tf.float32)
-            # mask /= tf.reduce_mean(mask)
             current_acc *= mask
             current_acc = tf.reduce_mean(current_acc)
             acc = acc + current_acc
@@ -118,12 +117,57 @@ class S2VT(object):
 
         return loss, video, caption, caption_mask, acc
 
+    def build_generator(self):
+        video = tf.placeholder(tf.float32, [1, self.n_video_lstm_step, self.dim_image])
+
+        video_flat = tf.reshape(video, [-1, self.dim_image])
+        image_emb = tf.nn.xw_plus_b(video_flat, self.encode_image_W, self.encode_image_b)
+        image_emb = tf.reshape(image_emb, [1, self.n_video_lstm_step, self.dim_hidden])
+
+        state1 = tf.zeros([1, self.lstm1.state_size])
+        state2 = tf.zeros([1, self.lstm2.state_size])
+        padding = tf.zeros([1, self.dim_hidden])
+
+        generated_words = []
+
+        for i in range(0, self.n_video_lstm_step):
+            with tf.variable_scope("LSTM1"):
+                output1, state1 = self.lstm1(image_emb[:, i, :], state1)
+                tf.get_variable_scope().reuse_variables()
+
+            with tf.variable_scope("LSTM2"):
+                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+                tf.get_variable_scope().reuse_variables()
+                
+
+        for i in range(0, self.n_caption_lstm_step):
+            if i == 0:
+                with tf.device('/cpu:0'):
+                    current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
+
+            with tf.variable_scope("LSTM1"):
+                output1, state1 = self.lstm1(padding, state1)
+                tf.get_variable_scope().reuse_variables()
+                
+
+            with tf.variable_scope("LSTM2"):
+                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                tf.get_variable_scope().reuse_variables()
+                
+
+            logit_words = tf.nn.xw_plus_b( output2, self.embed_word_W, self.embed_word_b)
+            max_prob_index = tf.argmax(logit_words, 1)[0]
+            generated_words.append(max_prob_index)
+
+        return video, generated_words
+
 data_foleder = sys.argv[1] if len(sys.argv) > 1 else './MLDS_hw2_data'
 training_folder =  os.path.join(data_foleder, 'training_data', 'feat/')
 testing_folder =  os.path.join(data_foleder, 'testing_data', 'feat/')
 training_label = os.path.join(data_foleder, 'training_label.json')
+testing_id = os.path.join(data_foleder, 'testing_id.txt')
 
-model_path = './'
+model_path = './models'
 
 n_epochs = 200
 batch_size = 64
@@ -251,5 +295,46 @@ def train():
             print ("Epoch {} is done. Saving the model ...".format(epoch))
             saver.save(sess, os.path.join(model_path, 'model'), global_step=epoch)
 
+def test(model_name):
+    loader = Loader()
+    x_test = loader.read_test_data(testing_id, testing_folder)
+
+    idx_to_word = np.load('./ixtoword.npy').tolist()
+
+    n_datas = x_test.shape[0]
+    n_video_lstm_step = x_test.shape[1]
+    dim_image = x_test.shape[2]
+
+    model = S2VT(
+            dim_image=dim_image,
+            n_words=len(idx_to_word),
+            dim_hidden=dim_hidden,
+            batch_size=batch_size,
+            n_video_lstm_step=n_video_lstm_step,
+            n_caption_lstm_step=n_caption_lstm_step)
+
+    tf_video, tf_generated_words = model.build_generator()
+
+    sess = tf.Session()
+    saver = tf.train.Saver()
+    saver.restore(sess, os.path.join(model_path, model_name))
+
+    for cur_video in x_test:
+        # cur_video = x_test[0]
+        cur_video = np.expand_dims(cur_video, axis=0)
+        generated_words_index = sess.run(
+                [tf_generated_words],
+                feed_dict={tf_video: cur_video})
+
+        generated_words = [idx_to_word[word] for word in generated_words_index[0]]
+        generated_words = []
+        for word in generated_words_index[0]:
+            word = idx_to_word[word]
+            if word != '<pad>' and word != '<bos>' and word != '<eos>':
+                generated_words.append(word)
+        sentence = ' '.join(generated_words)
+        print(sentence)
+
 if __name__ == '__main__':
-    train()
+    # train()
+    test('model-199')
