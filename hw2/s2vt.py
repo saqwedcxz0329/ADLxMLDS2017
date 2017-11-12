@@ -86,11 +86,11 @@ class S2VT(object):
             # onehot_labels = tf.sparse_to_dense(concated, tf.stack([self.batch_size, self.n_words]), 1.0, 0.0)
             # print(onehot_labels)
 
-            onehot_labels = tf.one_hot(indices=labels, depth=self.n_words)
+            onehot_labels = tf.one_hot(indices=caption[:, i+1], depth=self.n_words)
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logit_words, labels=onehot_labels)
-            cross_entropy = cross_entropy * caption_mask[:,i]
+            cross_entropy = cross_entropy * caption_mask[:,i+1]
 
             current_loss = tf.reduce_mean(cross_entropy)
             loss = loss + current_loss
@@ -102,7 +102,7 @@ class S2VT(object):
             current_acc = tf.cast(current_acc, tf.float32)
 
             # mask
-            mask = tf.cast(caption_mask[:,i], dtype=tf.float32)
+            mask = tf.cast(caption_mask[:,i+1], dtype=tf.float32)
             current_acc *= mask
             current_acc = tf.reduce_mean(current_acc)
             acc = acc + current_acc
@@ -257,7 +257,7 @@ def train():
         choosed_label = [random.randint(0, len(captions)-1) for captions in x_train_label]
         start_time = time.time()
         for start in range(0, n_datas, batch_size):
-            if start + batch_size >= n_datas: break
+            #if start + batch_size >= n_datas: break
 
             end = start + batch_size if start + batch_size < n_datas else n_datas
             current_features = x_train[start:end]
@@ -288,7 +288,7 @@ def train():
                         tf_caption_mask: current_caption_masks
                         })
 
-        print('idx: {} Epoch: {} loss: {:.3f} acc: {:.3f} Elapsed time: {:.3f}'.format(start, epoch, loss_val, acc_val, time.time() - start_time))
+        print('size: {} Epoch: {} loss: {:.3f} acc: {:.3f} Elapsed time: {:.3f}'.format(end, epoch, loss_val, acc_val, time.time() - start_time))
         
         if np.mod(epoch, 1) == 0:
             saver.save(sess, os.path.join(model_path, 'model'), global_step=epoch)
