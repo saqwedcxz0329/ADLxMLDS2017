@@ -347,7 +347,7 @@ def test(file_name, model_name):
     output_file.close()
 
 def download_model():
-    file_name = 'model.zip'
+    file_name = 'model_special.zip'
     if not os.path.isfile(file_name):
         os.system('wget \'https://www.dropbox.com/s/q0l7z6ebioiq0i7/{}?dl=1\''.format(file_name))
         os.system('mv {}?dl=1 {}'.format(file_name, file_name))
@@ -356,4 +356,4 @@ def download_model():
 if __name__ == '__main__':
     # train()
     download_model()
-    test(output_file_name, 'model-199')
+    test(output_file_name, 'model-special')
