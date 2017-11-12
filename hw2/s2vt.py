@@ -348,9 +348,10 @@ def test(file_name, model_name):
 
 def download_model():
     file_name = 'model.zip'
-    os.system('wget \'https://www.dropbox.com/s/q0l7z6ebioiq0i7/{}?dl=1\''.format(file_name))
-    os.system('mv {}?dl=1 {}'.format(file_name, file_name))
-    os.system('unzip {} -d {}'.format(file_name, model_path))
+    if not os.path.isfile(file_name):
+        os.system('wget \'https://www.dropbox.com/s/q0l7z6ebioiq0i7/{}?dl=1\''.format(file_name))
+        os.system('mv {}?dl=1 {}'.format(file_name, file_name))
+        os.system('unzip {} -d {}'.format(file_name, model_path))
 
 if __name__ == '__main__':
     # train()
