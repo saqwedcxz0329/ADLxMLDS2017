@@ -20,11 +20,8 @@ class S2VT(object):
 
         self.lstm1 = tf.nn.rnn_cell.BasicLSTMCell(dim_hidden, state_is_tuple=False)
         self.lstm2 = tf.nn.rnn_cell.BasicLSTMCell(dim_hidden, state_is_tuple=False)
-        # with tf.variable_scope(tf.get_variable_scope()) as scope:
         with tf.device("/cpu:0"):
             self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
-                # tf.get_variable_scope().reuse_variables()
-            #self.bemb = tf.Variable(tf.zeros([dim_hidden]), name='bemb')
 
         self.encode_image_W = tf.Variable( tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable( tf.zeros([dim_hidden]), name='encode_image_b')
@@ -33,22 +30,22 @@ class S2VT(object):
         self.embed_word_b = tf.Variable(tf.zeros([n_words]), name='embed_word_b')
 
     def build_model(self):
-        video = tf.placeholder(tf.float32, [self.batch_size, self.n_video_lstm_step, self.dim_image])
+        video = tf.placeholder(tf.float32, [None, self.n_video_lstm_step, self.dim_image])
 
-        caption = tf.placeholder(tf.int32, [self.batch_size, self.n_caption_lstm_step+1])
-        caption_mask = tf.placeholder(tf.float32, [self.batch_size, self.n_caption_lstm_step+1])
+        caption = tf.placeholder(tf.int32, [None, self.n_caption_lstm_step+1])
+        caption_mask = tf.placeholder(tf.float32, [None, self.n_caption_lstm_step+1])
 
         video_flat = tf.reshape(video, [-1, self.dim_image])
         image_emb = tf.nn.xw_plus_b( video_flat, self.encode_image_W, self.encode_image_b ) # (batch_size*n_lstm_steps, dim_hidden)
-        image_emb = tf.reshape(image_emb, [self.batch_size, self.n_video_lstm_step, self.dim_hidden])
+        image_emb = tf.reshape(image_emb, [-1, self.n_video_lstm_step, self.dim_hidden])
         
-        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.lstm1.state_size])
+        zeros_dims = tf.stack([tf.shape(video)[0], self.lstm1.state_size])
         state1 = tf.fill(zeros_dims, 0.0)
 
-        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.lstm2.state_size])
+        zeros_dims = tf.stack([tf.shape(video)[0], self.lstm2.state_size])
         state2 = tf.fill(zeros_dims, 0.0)
         
-        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.dim_hidden])
+        zeros_dims = tf.stack([tf.shape(video)[0], self.dim_hidden])
         padding = tf.fill(zeros_dims, 0.0)
 
         # state1 = tf.zeros([self.batch_size, self.lstm1.state_size])
@@ -60,8 +57,6 @@ class S2VT(object):
 
         #Encoding Stage
         for i in range(0, self.n_video_lstm_step):
-            # if i > 0:
-
             with tf.variable_scope("LSTM1"):
                 output1, state1 = self.lstm1(image_emb[:,i,:], state1)
                 tf.get_variable_scope().reuse_variables()
@@ -71,14 +66,10 @@ class S2VT(object):
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
                 tf.get_variable_scope().reuse_variables()
                 
-
         #Decoding Stage
         for i in range(0, self.n_caption_lstm_step):
-            # with tf.variable_scope(tf.get_variable_scope()) as scope:
             with tf.device("/cpu:0"):
                 current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
-
-            # tf.get_variable_scope().reuse_variables()
 
             with tf.variable_scope("LSTM1"):
                 output1, state1 = self.lstm1(padding, state1)
@@ -90,9 +81,12 @@ class S2VT(object):
                 
 
             labels = tf.expand_dims(caption[:, i+1], 1)
-            indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
-            concated = tf.concat([indices, labels], 1)
-            onehot_labels = tf.sparse_to_dense(concated, tf.stack([self.batch_size, self.n_words]), 1.0, 0.0)
+            # indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
+            # concated = tf.concat([indices, labels], 1)
+            # onehot_labels = tf.sparse_to_dense(concated, tf.stack([self.batch_size, self.n_words]), 1.0, 0.0)
+            # print(onehot_labels)
+
+            onehot_labels = tf.one_hot(indices=labels, depth=self.n_words)
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logit_words, labels=onehot_labels)
@@ -252,7 +246,7 @@ def train():
     
     tf_loss, tf_video, tf_caption, tf_caption_mask, tf_acc = model.build_model()
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.111)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
