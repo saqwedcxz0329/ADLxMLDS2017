@@ -9,9 +9,6 @@ from keras.preprocessing import sequence
 
 from loader import Loader
 
-
-
-
 class S2VT(object):
     def __init__(self, dim_image, n_words, dim_hidden, batch_size, n_video_lstm_step, n_caption_lstm_step):
         self.dim_image = dim_image
@@ -45,12 +42,22 @@ class S2VT(object):
         video_flat = tf.reshape(video, [-1, self.dim_image])
         image_emb = tf.nn.xw_plus_b( video_flat, self.encode_image_W, self.encode_image_b ) # (batch_size*n_lstm_steps, dim_hidden)
         image_emb = tf.reshape(image_emb, [self.batch_size, self.n_video_lstm_step, self.dim_hidden])
+        
+        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.lstm1.state_size])
+        state1 = tf.fill(zeros_dims, 0.0)
 
-        state1 = tf.zeros([self.batch_size, self.lstm1.state_size])
-        state2 = tf.zeros([self.batch_size, self.lstm2.state_size])
-        padding = tf.zeros([self.batch_size, self.dim_hidden])
+        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.lstm2.state_size])
+        state2 = tf.fill(zeros_dims, 0.0)
+        
+        zeros_dims = tf.stack([video.get_shape().as_list()[0], self.dim_hidden])
+        padding = tf.fill(zeros_dims, 0.0)
+
+        # state1 = tf.zeros([self.batch_size, self.lstm1.state_size])
+        # state2 = tf.zeros([self.batch_size, self.lstm2.state_size])
+        # padding = tf.zeros([self.batch_size, self.dim_hidden])
 
         loss = 0.0
+        acc = 0.0
 
         ##############################  Encoding Stage ##################################
         for i in range(0, self.n_video_lstm_step):
@@ -92,21 +99,36 @@ class S2VT(object):
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logit_words, labels=onehot_labels)
             cross_entropy = cross_entropy * caption_mask[:,i]
 
-            current_loss = tf.reduce_sum(cross_entropy)/self.batch_size
+            current_loss = tf.reduce_mean(cross_entropy)
             loss = loss + current_loss
 
-        return loss, video, caption, caption_mask
+            # accuracy
+            logit_words = tf.argmax(logit_words, -1)
+            onehot_labels = tf.argmax(onehot_labels, -1)
+            current_acc = tf.equal(logit_words, onehot_labels)
+            current_acc = tf.cast(current_acc, tf.float32)
 
+            # mask
+            mask = tf.cast(caption_mask[:,i], dtype=tf.float32)
+            # mask /= tf.reduce_mean(mask)
+            current_acc *= mask
+            current_acc = tf.reduce_mean(current_acc)
+            acc = acc + current_acc
+        acc = acc / self.n_caption_lstm_step
+
+        return loss, video, caption, caption_mask, acc
 
 data_foleder = sys.argv[1] if len(sys.argv) > 1 else './MLDS_hw2_data'
 training_folder =  os.path.join(data_foleder, 'training_data', 'feat/')
 testing_folder =  os.path.join(data_foleder, 'testing_data', 'feat/')
 training_label = os.path.join(data_foleder, 'training_label.json')
 
-n_epochs = 100
+model_path = './'
+
+n_epochs = 200
 batch_size = 64
-dim_hidden = 100
-learning_rate = 0.1
+dim_hidden = 256
+learning_rate = 0.001
 
 n_caption_lstm_step = 35
 
@@ -178,17 +200,17 @@ def train():
             n_video_lstm_step=n_video_lstm_step,
             n_caption_lstm_step=n_caption_lstm_step)
     
-    tf_loss, tf_video, tf_caption, tf_caption_mask = model.build_model()
+    tf_loss, tf_video, tf_caption, tf_caption_mask, tf_acc = model.build_model()
     sess = tf.Session()
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
+    saver = tf.train.Saver(max_to_keep=10, write_version=tf.train.SaverDef.V2)
     sess.run(tf.global_variables_initializer())
-    # sess = tf.InteractiveSession()
-    # tf.global_variables_initializer().run()
     
     for epoch in range(n_epochs):
         choosed_label = [random.randint(0, len(captions)-1) for captions in x_train_label]
 
         for start in range(0, n_datas, batch_size):
+            if start + batch_size >= n_datas: break
             start_time = time.time()
 
             end = start + batch_size if start + batch_size < n_datas else n_datas
@@ -203,14 +225,28 @@ def train():
             # print('feature: ', current_features.shape)
             # print('captions: ', current_captions.shape)
             # print('mask: ', current_caption_masks.shape)
+            
+            sess.run(
+                    [train_op],
+                    feed_dict={
+                        tf_video: current_features,
+                        tf_caption: current_captions,
+                        tf_caption_mask: current_caption_masks
+                        })
 
-            _, loss_val = sess.run(
-                        [train_op, tf_loss],
-                        feed_dict={
-                            tf_video: current_features,
-                            tf_caption: current_captions,
-                            tf_caption_mask: current_caption_masks
-                            })
-            print('idx: {} Epoch: {} loss: {} Elapsed time: {}'.format(start, epoch, loss_val, time.time() - start_time))
+            acc_val, loss_val = sess.run(
+                [tf_acc, tf_loss],
+                feed_dict={
+                        tf_video: current_features,
+                        tf_caption: current_captions,
+                        tf_caption_mask: current_caption_masks
+                        })
+
+            print('idx: {} Epoch: {} loss: {:.3f} acc: {:.3f} Elapsed time: {:.3f}'.format(start, epoch, loss_val, acc_val, time.time() - start_time))
+        
+        if np.mod(epoch, 1) == 0:
+            print ("Epoch {} is done. Saving the model ...".format(epoch))
+            saver.save(sess, os.path.join(model_path, 'model'), global_step=epoch)
+
 if __name__ == '__main__':
     train()
