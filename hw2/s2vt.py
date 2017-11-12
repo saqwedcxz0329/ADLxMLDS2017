@@ -163,6 +163,8 @@ class S2VT(object):
         return video, generated_words
 
 data_foleder = sys.argv[1] if len(sys.argv) > 1 else './MLDS_hw2_data'
+output_file_name = sys.argv[2] if len(sys.argv) > 2 else './test_output.csv'
+
 training_folder =  os.path.join(data_foleder, 'training_data', 'feat/')
 testing_folder =  os.path.join(data_foleder, 'testing_data', 'feat/')
 training_label = os.path.join(data_foleder, 'training_label.json')
@@ -320,23 +322,30 @@ def test(file_name, model_name):
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join(model_path, model_name))
 
-    output_file = open(file_name, 'w')    
-    for cur_video, viedo_id in zip(x_test, id_list):
-        cur_video = np.expand_dims(cur_video, axis=0)
-        generated_words_index = sess.run(
-                [tf_generated_words],
-                feed_dict={tf_video: cur_video})
+    output_file = open(file_name, 'w')
+    special = ['klteYv1Uv9A_27_33.avi', 
+    '5YJaS2Eswg0_22_26.avi', 
+    'UbmZAe5u5FI_132_141.avi', 
+    'JntMAcTlOF0_50_70.avi',
+    'tJHUH9tpqPg_113_118.avi']
 
-        generated_words = [idx_to_word[word] for word in generated_words_index[0]]
-        generated_words = []
-        for word in generated_words_index[0]:
-            word = idx_to_word[word]
-            if word != '<pad>' and word != '<bos>' and word != '<eos>':
-                generated_words.append(word)
-        sentence = ' '.join(generated_words)
-        output_file.write(viedo_id + ',' + sentence + '\n')
+    for cur_video, viedo_id in zip(x_test, id_list):
+        if viedo_id in special:
+            cur_video = np.expand_dims(cur_video, axis=0)
+            generated_words_index = sess.run(
+                    [tf_generated_words],
+                    feed_dict={tf_video: cur_video})
+
+            generated_words = [idx_to_word[word] for word in generated_words_index[0]]
+            generated_words = []
+            for word in generated_words_index[0]:
+                word = idx_to_word[word]
+                if word != '<pad>' and word != '<bos>' and word != '<eos>':
+                    generated_words.append(word)
+            sentence = ' '.join(generated_words)
+            output_file.write(viedo_id + ',' + sentence + '\n')
     output_file.close()
 
 if __name__ == '__main__':
     # train()
-    test('shit_test.csv', 'model-199')
+    test(output_file_name, 'model-199')
