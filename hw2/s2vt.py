@@ -163,7 +163,7 @@ class S2VT(object):
         return video, generated_words
 
 data_foleder = sys.argv[1] if len(sys.argv) > 1 else './MLDS_hw2_data'
-output_file_name = sys.argv[2] if len(sys.argv) > 2 else './test_output.csv'
+output_file_name = sys.argv[2] if len(sys.argv) > 2 else './test_output.txt'
 
 training_folder =  os.path.join(data_foleder, 'training_data', 'feat/')
 testing_folder =  os.path.join(data_foleder, 'testing_data', 'feat/')
@@ -177,7 +177,7 @@ batch_size = 64
 dim_hidden = 256
 learning_rate = 0.001
 
-n_caption_lstm_step = 35
+n_caption_lstm_step = 25
 
 def build_vocab(x_train_label):
     word_to_idx = {}
@@ -251,17 +251,19 @@ def train():
             n_caption_lstm_step=n_caption_lstm_step)
     
     tf_loss, tf_video, tf_caption, tf_caption_mask, tf_acc = model.build_model()
-    sess = tf.Session()
+
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
     saver = tf.train.Saver(max_to_keep=10, write_version=tf.train.SaverDef.V2)
     sess.run(tf.global_variables_initializer())
     
     for epoch in range(n_epochs):
         choosed_label = [random.randint(0, len(captions)-1) for captions in x_train_label]
-
+        start_time = time.time()
         for start in range(0, n_datas, batch_size):
             if start + batch_size >= n_datas: break
-            start_time = time.time()
 
             end = start + batch_size if start + batch_size < n_datas else n_datas
             current_features = x_train[start:end]
@@ -292,10 +294,9 @@ def train():
                         tf_caption_mask: current_caption_masks
                         })
 
-            print('idx: {} Epoch: {} loss: {:.3f} acc: {:.3f} Elapsed time: {:.3f}'.format(start, epoch, loss_val, acc_val, time.time() - start_time))
+        print('idx: {} Epoch: {} loss: {:.3f} acc: {:.3f} Elapsed time: {:.3f}'.format(start, epoch, loss_val, acc_val, time.time() - start_time))
         
         if np.mod(epoch, 1) == 0:
-            print ("Epoch {} is done. Saving the model ...".format(epoch))
             saver.save(sess, os.path.join(model_path, 'model'), global_step=epoch)
 
 def test(file_name, model_name):
@@ -330,20 +331,19 @@ def test(file_name, model_name):
     'tJHUH9tpqPg_113_118.avi']
 
     for cur_video, viedo_id in zip(x_test, id_list):
-        if viedo_id in special:
-            cur_video = np.expand_dims(cur_video, axis=0)
-            generated_words_index = sess.run(
-                    [tf_generated_words],
-                    feed_dict={tf_video: cur_video})
+        # if viedo_id in special:
+        cur_video = np.expand_dims(cur_video, axis=0)
+        generated_words_index = sess.run(
+                [tf_generated_words],
+                feed_dict={tf_video: cur_video})
 
-            generated_words = [idx_to_word[word] for word in generated_words_index[0]]
-            generated_words = []
-            for word in generated_words_index[0]:
-                word = idx_to_word[word]
-                if word != '<pad>' and word != '<bos>' and word != '<eos>':
-                    generated_words.append(word)
-            sentence = ' '.join(generated_words)
-            output_file.write(viedo_id + ',' + sentence + '\n')
+        generated_words = []
+        for word in generated_words_index[0]:
+            word = idx_to_word[word]
+            if word != '<pad>' and word != '<bos>' and word != '<eos>':
+                generated_words.append(word)
+        sentence = ' '.join(generated_words)
+        output_file.write(viedo_id + ',' + sentence + '\n')
     output_file.close()
 
 def download_model():
@@ -354,6 +354,6 @@ def download_model():
         os.system('unzip {} -d {}'.format(file_name, model_path))
 
 if __name__ == '__main__':
-    # train()
-    download_model()
-    test(output_file_name, 'model-special')
+    train()
+    # download_model()
+    # test(output_file_name, 'model-199')
