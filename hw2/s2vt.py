@@ -188,6 +188,9 @@ def train():
     word_to_idx, idx_to_word = build_vocab(x_train_label)
     x_train_label, x_train_mask = transfer_to_index(x_train_label, word_to_idx, n_caption_lstm_step)
 
+    np.save("./wordtoix", word_to_idx)
+    np.save('./ixtoword', idx_to_word)
+
     n_datas = x_train.shape[0]
     n_video_lstm_step = x_train.shape[1]
     dim_image = x_train.shape[2]
