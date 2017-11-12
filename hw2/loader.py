@@ -7,7 +7,7 @@ class Loader(object):
     def __init__(self):
         pass
     
-    def read_data(self, folder, id_to_captions=None):
+    def read_data(self, folder, id_to_captions):
         x = []
         x_label = []
         for filename in os.listdir(folder):
@@ -15,23 +15,22 @@ class Loader(object):
             full_path = folder + filename
             feature = np.load(full_path)
             x.append(feature)
-            if id_to_captions is not None:
-                x_label.append(id_to_captions[viedo_id])
+            x_label.append(id_to_captions[viedo_id])
         x = np.array(x, dtype='float32')
-        if id_to_captions is not None:
-            return x, x_label
-        return x
+        return x, x_label
     
     def read_test_data(self, id_file, folder):
         x = []
+        id_list = []
         with open(id_file, 'r') as file:
             for line in file:
                 viedo_id = line.strip()
                 full_path = folder + viedo_id + '.npy'
                 feature = np.load(full_path)
                 x.append(feature)
+                id_list.append(viedo_id)
             x = np.array(x, dtype='float32')
-        return x
+        return x, id_list
                 
     def read_captions(self, file_name):
         id_to_captions = {}

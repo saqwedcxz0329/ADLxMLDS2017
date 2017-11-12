@@ -5,7 +5,6 @@ import random
 
 import numpy as np
 import tensorflow as tf
-import pandas as pd
 from keras.preprocessing import sequence
 
 from loader import Loader
@@ -149,15 +148,17 @@ class S2VT(object):
                 output1, state1 = self.lstm1(padding, state1)
                 tf.get_variable_scope().reuse_variables()
                 
-
             with tf.variable_scope("LSTM2"):
                 output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
                 tf.get_variable_scope().reuse_variables()
-                
 
             logit_words = tf.nn.xw_plus_b( output2, self.embed_word_W, self.embed_word_b)
             max_prob_index = tf.argmax(logit_words, 1)[0]
             generated_words.append(max_prob_index)
+
+            with tf.device("/cpu:0"):
+                current_embed = tf.nn.embedding_lookup(self.Wemb, max_prob_index)
+                current_embed = tf.expand_dims(current_embed, 0)
 
         return video, generated_words
 
@@ -295,9 +296,9 @@ def train():
             print ("Epoch {} is done. Saving the model ...".format(epoch))
             saver.save(sess, os.path.join(model_path, 'model'), global_step=epoch)
 
-def test(model_name):
+def test(file_name, model_name):
     loader = Loader()
-    x_test = loader.read_test_data(testing_id, testing_folder)
+    x_test, id_list = loader.read_test_data(testing_id, testing_folder)
 
     idx_to_word = np.load('./ixtoword.npy').tolist()
 
@@ -319,8 +320,8 @@ def test(model_name):
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join(model_path, model_name))
 
-    for cur_video in x_test:
-        # cur_video = x_test[0]
+    output_file = open(file_name, 'w')    
+    for cur_video, viedo_id in zip(x_test, id_list):
         cur_video = np.expand_dims(cur_video, axis=0)
         generated_words_index = sess.run(
                 [tf_generated_words],
@@ -333,8 +334,9 @@ def test(model_name):
             if word != '<pad>' and word != '<bos>' and word != '<eos>':
                 generated_words.append(word)
         sentence = ' '.join(generated_words)
-        print(sentence)
+        output_file.write(viedo_id + ',' + sentence + '\n')
+    output_file.close()
 
 if __name__ == '__main__':
     # train()
-    test('model-199')
+    test('shit_test.csv', 'model-199')
