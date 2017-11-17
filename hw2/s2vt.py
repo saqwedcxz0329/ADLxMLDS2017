@@ -28,8 +28,10 @@ class S2VT(object):
         self.embed_word_W = tf.Variable(tf.random_uniform([dim_hidden, n_words], -0.1,0.1), name='embed_word_W')
         self.embed_word_b = tf.Variable(tf.zeros([n_words]), name='embed_word_b')
 
-        self.attention_W = tf.Variable(tf.random_uniform([2*dim_hidden, 2*dim_hidden], -0.1, -0.1), name="attention_W")
-        self.attention_b = tf.Variable(tf.zeros([2*dim_hidden]), name="attention_b")
+        self.attention_W_alpha = tf.Variable(tf.random_uniform([dim_hidden, dim_hidden], -0.1, -0.1), name="attention_W_attention")
+        # self.attention_b = tf.Variable(tf.zeros([dim_hidden]), name="attention_b")
+
+        self.attention_W_context = tf.Variable(tf.random_uniform([2*dim_hidden, dim_hidden], -0.1, -0.1), name="attention_W_context")
 
     def build_model(self, is_training=True):
         video = tf.placeholder(tf.float32, [None, self.n_video_lstm_step, self.dim_image])
@@ -59,18 +61,18 @@ class S2VT(object):
         concat_attention_h_s = None
         for i in range(0, self.n_video_lstm_step):
             with tf.variable_scope("LSTM1"):
-                output1, state1 = self.lstm1(image_emb[:,i,:], state1) # state1.shape = (?, 2*self.dim_hidden)
+                output1, state1 = self.lstm1(image_emb[:,i,:], state1) # state1.shape = (?, self.dim_hidden)
                 tf.get_variable_scope().reuse_variables()
 
             with tf.variable_scope("LSTM2"):
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
                 tf.get_variable_scope().reuse_variables()
 
-                attention_h = tf.reshape(state2, [-1, 1, 2*self.dim_hidden])
+                attention_h = tf.reshape(output2, [-1, 1, self.dim_hidden])
                 if i == 0:
                     concat_attention_h_s = attention_h
                 else:
-                    concat_attention_h_s = tf.concat([concat_attention_h_s, attention_h], axis=1) # (?, self.n_video_lstm_step, 2*self.dim_hidden)
+                    concat_attention_h_s = tf.concat([concat_attention_h_s, attention_h], axis=1) # (?, self.n_video_lstm_step, self.dim_hidden)
         
                 
         #### Decoding Stage ####
@@ -82,27 +84,33 @@ class S2VT(object):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, boses)
 
             with tf.variable_scope("LSTM1"):
-                output1, state1 = self.lstm1(padding, state1) # output1.shape, state1.shape = (?, self.dim_hidden), (?, 2*self.dim_hidden)
+                output1, state1 = self.lstm1(padding, state1) # output1.shape, state1.shape = (?, self.dim_hidden), (?, self.dim_hidden)
                 tf.get_variable_scope().reuse_variables()
 
             with tf.variable_scope("LSTM2"):
-                h_t = tf.reshape(state2, [-1, 2*self.dim_hidden, 1]) # h_t.shape = (?, 2*self.dim_hidden, 1)
-                h_sT = tf.transpose(concat_attention_h_s, perm=[0, 2, 1]) # (?, 2*self.dim_hidden, n_video_lstm_step)
+                h_t = tf.reshape(output2, [-1, self.dim_hidden, 1]) # h_t.shape = (?, self.dim_hidden, 1)
+                h_sT = tf.transpose(concat_attention_h_s, perm=[0, 2, 1]) # (?, self.dim_hidden, n_video_lstm_step)
                 
-                concat_attention_h_s = tf.reshape(concat_attention_h_s, [-1, 2*self.dim_hidden]) # (?*n_video_lstm_step, 2*self.dim_hidden)
-                concat_attention_h_s = tf.nn.xw_plus_b(concat_attention_h_s, self.attention_W, self.attention_b)
-                concat_attention_h_s = tf.reshape(concat_attention_h_s, [-1, self.n_video_lstm_step, 2*self.dim_hidden])
-                alpha = tf.matmul(concat_attention_h_s, h_t)
-                alpha = tf.nn.softmax(alpha) # (?, n_video_lstm_step, 1)
+                # step(1)
+                alpha_t_s = tf.reshape(concat_attention_h_s, [-1, self.dim_hidden]) # (?*n_video_lstm_step, self.dim_hidden)
+                alpha_t_s = tf.matmul(alpha_t_s, self.attention_W_alpha)
+                # alpha_t_s = tf.nn.xw_plus_b(alpha_t_s, self.attention_W, self.attention_b)
+                alpha_t_s = tf.reshape(alpha_t_s, [-1, self.n_video_lstm_step, self.dim_hidden])
+                alpha_t_s = tf.matmul(alpha_t_s, h_t) # (?, n_video_lstm_step, 1)
+                alpha_t_s = tf.nn.softmax(alpha_t_s) 
                 
-                context = tf.matmul(h_sT, alpha) # (?, 2*self.dim_hidden, 1)
-                context = context[:, self.dim_hidden:, :]
+                # step(2)
+                context = tf.matmul(h_sT, alpha_t_s) # (?, self.dim_hidden, 1)
                 context = tf.reshape(context, [-1, self.dim_hidden])
+
+                # step(3)
+                # attention_vector = tf.matmul(tf.concat([context, output2], 1), self.attention_W_context)
+                # attention_vector = tf.nn.tanh(attention_vector)
 
                 output2, state2 = self.lstm2(tf.concat([current_embed, context], 1), state2)
                 # output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
                 tf.get_variable_scope().reuse_variables()
-            
+
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             pred_words = tf.argmax(logit_words, -1)
             
