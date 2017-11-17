@@ -177,7 +177,7 @@ batch_size = 64
 dim_hidden = 256
 learning_rate = 0.001
 
-n_caption_lstm_step = 35
+n_caption_lstm_step = 25
 
 def build_vocab(x_train_label):
     word_to_idx = {}
@@ -251,7 +251,9 @@ def train():
             n_caption_lstm_step=n_caption_lstm_step)
     
     tf_loss, tf_video, tf_caption, tf_caption_mask, tf_acc = model.build_model()
-    sess = tf.Session()
+    
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.111)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
     saver = tf.train.Saver(max_to_keep=10, write_version=tf.train.SaverDef.V2)
     sess.run(tf.global_variables_initializer())
@@ -330,6 +332,7 @@ def test(file_name, model_name):
     'tJHUH9tpqPg_113_118.avi']
 
     for cur_video, viedo_id in zip(x_test, id_list):
+        if True:
         if viedo_id in special:
             cur_video = np.expand_dims(cur_video, axis=0)
             generated_words_index = sess.run(
@@ -354,6 +357,6 @@ def download_model():
         os.system('unzip {} -d {}'.format(file_name, model_path))
 
 if __name__ == '__main__':
-    # train()
-    download_model()
-    test(output_file_name, 'model-special')
+    train()
+    #download_model()
+    #test(output_file_name, 'model-special')
