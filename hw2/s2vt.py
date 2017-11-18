@@ -73,7 +73,6 @@ class S2VT(object):
                     concat_attention_h_s = attention_h
                 else:
                     concat_attention_h_s = tf.concat([concat_attention_h_s, attention_h], axis=1) # (?, self.n_video_lstm_step, self.dim_hidden)
-        
                 
         #### Decoding Stage ####
         for i in range(0, self.n_caption_lstm_step):
@@ -84,10 +83,7 @@ class S2VT(object):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, boses)
 
             with tf.variable_scope("LSTM1"):
-                output1, state1 = self.lstm1(padding, state1) # output1.shape, state1.shape = (?, self.dim_hidden), (?, self.dim_hidden)
-                tf.get_variable_scope().reuse_variables()
-
-            with tf.variable_scope("LSTM2"):
+                
                 h_t = tf.reshape(output2, [-1, self.dim_hidden, 1]) # h_t.shape = (?, self.dim_hidden, 1)
                 h_sT = tf.transpose(concat_attention_h_s, perm=[0, 2, 1]) # (?, self.dim_hidden, n_video_lstm_step)
                 
@@ -103,18 +99,26 @@ class S2VT(object):
                 context = tf.matmul(h_sT, alpha_t_s) # (?, self.dim_hidden, 1)
                 context = tf.reshape(context, [-1, self.dim_hidden])
 
-                # step(3)
+                # # step(3)
                 # attention_vector = tf.matmul(tf.concat([context, output2], 1), self.attention_W_context)
                 # attention_vector = tf.nn.tanh(attention_vector)
 
-                output2, state2 = self.lstm2(tf.concat([current_embed, context], 1), state2)
-                # output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                # output1, state1 = self.lstm1(padding, state1) # output1.shape, state1.shape = (?, self.dim_hidden), (?, self.dim_hidden)
+                output1, state1 = self.lstm1(context, state1) # output1.shape, state1.shape = (?, self.dim_hidden), (?, self.dim_hidden)
                 tf.get_variable_scope().reuse_variables()
 
+            with tf.variable_scope("LSTM2"):
+                # output2, state2 = self.lstm2(tf.concat([current_embed, context], 1), state2)
+                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                tf.get_variable_scope().reuse_variables()
+                
+
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
+            # logit_words = tf.nn.softmax(logit_words)
             pred_words = tf.argmax(logit_words, -1)
             
             flip = random.random() if is_training else 0.0
+            flip = 1.0
 
             if flip > 0.5:
                 with tf.device("/cpu:0"):
