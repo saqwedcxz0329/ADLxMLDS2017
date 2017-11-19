@@ -36,7 +36,7 @@ def download_model():
         os.system('mv {}?dl=1 {}'.format(file_name, file_name))
         os.system('unzip {} -d {}'.format(file_name, model_path))
 
-def write_file(file_name, generated_words_index, id_list):
+def write_file(file_name, idx_to_word, generated_words_index, id_list):
     output_file = open(file_name, 'w')
     for caption_index, viedo_id in zip(generated_words_index, id_list):
         caption_words = []
@@ -51,8 +51,8 @@ def write_file(file_name, generated_words_index, id_list):
 def test(model_name):
     ##### Preprcessing ####
     loader = Loader()
-    x_test, test_id_list = loader.read_test_data(id_file_name, feature_folder)
-    x_peer, peer_id_list = loader.read_test_data(id_file_name, feature_folder)
+    x_test, test_id_list = loader.read_test_data(testing_id, testing_folder)
+    x_peer, peer_id_list = loader.read_test_data(peer_review_id, peer_review_folder)
 
     idx_to_word = np.load('./ixtoword.npy').tolist()
 
@@ -78,14 +78,14 @@ def test(model_name):
                 feed_dict={
                         tf_video: x_test
                         })
-    write_file(test_output_file_name, test_generated_words_index, test_id_list)
+    write_file(test_output_file_name, idx_to_word, test_generated_words_index, test_id_list)
 
     peer_generated_words_index = sess.run(
                 tf_generated_words,
                 feed_dict={
                         tf_video: x_peer
                         })
-    write_file(peer_output_file_name, peer_generated_words_index, peer_id_list)
+    write_file(peer_output_file_name, idx_to_word, peer_generated_words_index, peer_id_list)
 
     
 
