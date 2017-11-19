@@ -75,7 +75,7 @@ class S2VT(object):
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             pred_words = tf.argmax(logit_words, -1)
             
-            flip = random.random() if is_training else 0.0
+            flip = 1.0 if is_training else 0.0
 
             if flip > 0.5:
                 with tf.device("/cpu:0"):
