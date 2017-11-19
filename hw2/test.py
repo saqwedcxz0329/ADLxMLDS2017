@@ -90,5 +90,4 @@ def test(model_name):
     
 
 if __name__ == '__main__':
-    #download_model()
     test('model-199')
