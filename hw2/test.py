@@ -81,4 +81,4 @@ def test(out_put_file_name, id_file_name, feature_folder, model_name):
 if __name__ == '__main__':
     #download_model()
     test(test_output_file_name, testing_id, testing_folder, 'model-199')
-    # test(peer_output_file_name, peer_review_id, peer_review_folder, 'model-special')
+    test(peer_output_file_name, peer_review_id, peer_review_folder, 'model-199')
