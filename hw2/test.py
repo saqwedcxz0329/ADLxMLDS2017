@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from loader import Loader
-from s2vt import S2VT
+from model_seq2seq import S2VT
 
 
 #### Global parameters ####
