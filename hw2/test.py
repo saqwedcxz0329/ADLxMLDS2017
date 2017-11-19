@@ -36,14 +36,26 @@ def download_model():
         os.system('mv {}?dl=1 {}'.format(file_name, file_name))
         os.system('unzip {} -d {}'.format(file_name, model_path))
 
-def test(out_put_file_name, id_file_name, feature_folder, model_name):
+def write_file(file_name, generated_words_index, id_list):
+    output_file = open(file_name, 'w')
+    for caption_index, viedo_id in zip(generated_words_index, id_list):
+        caption_words = []
+        for idx in caption_index:
+            word = idx_to_word[idx]
+            if word != '<pad>' and word != '<bos>' and word != '<eos>':
+                caption_words.append(word)
+        sentence = ' '.join(caption_words)
+        output_file.write(viedo_id + ',' + sentence + '\n')
+    output_file.close()
+
+def test(model_name):
     ##### Preprcessing ####
     loader = Loader()
-    x_test, id_list = loader.read_test_data(id_file_name, feature_folder)
+    x_test, test_id_list = loader.read_test_data(id_file_name, feature_folder)
+    x_peer, peer_id_list = loader.read_test_data(id_file_name, feature_folder)
 
     idx_to_word = np.load('./ixtoword.npy').tolist()
 
-    n_datas = x_test.shape[0]
     n_video_lstm_step = x_test.shape[1]
     dim_image = x_test.shape[2]
 
@@ -61,24 +73,22 @@ def test(out_put_file_name, id_file_name, feature_folder, model_name):
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join(model_path, model_name))
 
-    generated_words_index = sess.run(
+    test_generated_words_index = sess.run(
                 tf_generated_words,
                 feed_dict={
                         tf_video: x_test
                         })
+    write_file(test_output_file_name, test_generated_words_index, test_id_list)
 
-    output_file = open(out_put_file_name, 'w')
-    for caption_index, viedo_id in zip(generated_words_index, id_list):
-        caption_words = []
-        for idx in caption_index:
-            word = idx_to_word[idx]
-            if word != '<pad>' and word != '<bos>' and word != '<eos>':
-                caption_words.append(word)
-        sentence = ' '.join(caption_words)
-        output_file.write(viedo_id + ',' + sentence + '\n')
-    output_file.close()
+    peer_generated_words_index = sess.run(
+                tf_generated_words,
+                feed_dict={
+                        tf_video: x_peer
+                        })
+    write_file(peer_output_file_name, peer_generated_words_index, peer_id_list)
+
+    
 
 if __name__ == '__main__':
     #download_model()
-    test(test_output_file_name, testing_id, testing_folder, 'model-199')
-    test(peer_output_file_name, peer_review_id, peer_review_folder, 'model-199')
+    test('model-199')
