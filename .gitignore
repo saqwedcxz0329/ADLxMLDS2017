@@ -1,0 +1,14 @@
+*.txt
+*.zip
+*.csv
+*.docx
+*/.vscode/
+*/__pycache__/
+
+# hw1 ignore
+*/data/
+*.png
+
+# hw2 ignore
+*/MLDS_hw2_data/
+*/models/
