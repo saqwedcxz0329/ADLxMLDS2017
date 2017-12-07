@@ -70,7 +70,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        total_episodes = 1000
+        total_episodes = 1
         env.seed(seed)
         for i in range(total_episodes):
             state = env.reset()
@@ -96,6 +96,8 @@ class Agent_PG(Agent):
             vt = self.model.train()
 
             pre_gray_state = cur_gray_state
+
+        self.model.save('./models')        
 
 
     def make_action(self, observation, test=True):

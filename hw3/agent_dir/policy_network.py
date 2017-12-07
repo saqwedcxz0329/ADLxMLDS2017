@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import tensorflow as tf
 
@@ -113,6 +115,10 @@ class PolicyNetwork(object):
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []    # empty episode data
         return discounted_ep_rs_norm
     
+    def save(self, model_path):
+        saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
+        saver.save(self.sess, os.path.join(model_path, 'model'))
+
     def _discount_and_norm_rewards(self):
         # discount episode rewards
         discounted_ep_rs = np.zeros_like(self.ep_rs)
