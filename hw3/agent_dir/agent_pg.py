@@ -6,6 +6,8 @@ from environment import Environment
 from agent_dir.policy_network import PolicyNetwork
 
 seed = 11037
+model_path = './models'
+model_name = 'model'
 
 def prepro(o, image_size=[80, 80]):
     """
@@ -37,13 +39,14 @@ class Agent_PG(Agent):
         n_features = 80 * 80 * 1
 
         self.model = PolicyNetwork(env.get_action_space().n,
-                               n_features,
-                               learning_rate=0.1,
-                               reward_decay=0.9)
+                                   n_features,
+                                   learning_rate=0.1,
+                                   reward_decay=0.9)
 
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
+            self.model.restore(model_path, model_name)
 
         ##################
         # YOUR CODE HERE #
@@ -70,21 +73,20 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        total_episodes = 1
+        total_episodes = 10000
         env.seed(seed)
         for i in range(total_episodes):
-            state = env.reset()
-            pre_gray_state = prepro(state).reshape(-1)
+            prev_state = env.reset()
             self.init_game_setting()
             done = False
             #playing one game
             while(not done):
                 action = self.make_action(
-                    pre_gray_state, test=True)  # 2: up, 3: down
+                    prev_state, test=True)  # 2: up, 3: down
 
-                state, reward, done, info = env.step(action)
-                cur_gray_state = prepro(state).reshape(-1)
+                cur_state, reward, done, info = env.step(action)
                 
+                pre_gray_state = prepro(prev_state).reshape(-1)
                 self.model.store_transition(pre_gray_state, action, reward)
             episode_reward = sum(self.model.ep_rs)
             if 'running_reward' not in globals():
@@ -95,9 +97,9 @@ class Agent_PG(Agent):
 
             vt = self.model.train()
 
-            pre_gray_state = cur_gray_state
+            prev_state = cur_state
+            self.model.save(model_path, model_name)        
 
-        self.model.save('./models')        
 
 
     def make_action(self, observation, test=True):
@@ -115,6 +117,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        observation = prepro(observation).reshape(-1)
         return self.model.make_action(observation)
         # return self.env.get_random_action()
 

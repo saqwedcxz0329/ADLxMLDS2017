@@ -48,7 +48,7 @@ class PolicyNetwork(object):
         # Convolutional Layer #2 and Pooling Layer #2
         conv2 = tf.layers.conv2d(
             inputs=pool1,
-            filters=64,
+            filters=32,
             kernel_size=[5, 5],
             padding="same",
             activation=tf.nn.relu)
@@ -87,13 +87,8 @@ class PolicyNetwork(object):
     def make_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={
                                      self.tf_obs: observation[np.newaxis, :]})
-        action = np.argmax(prob_weights)
-        # if max_dim == 0:
-        #     action = 2
-        # elif max_dim == 1:
-        #     action = 3
-        # else:
-        #     raise ValueError('Ivalid action!!')
+        action = np.random.choice(
+            range(prob_weights.shape[1]), p=prob_weights.ravel())
         return action
 
     def store_transition(self, s, a, r):
@@ -115,9 +110,13 @@ class PolicyNetwork(object):
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []    # empty episode data
         return discounted_ep_rs_norm
     
-    def save(self, model_path):
+    def save(self, model_path, model_name):
         saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
-        saver.save(self.sess, os.path.join(model_path, 'model'))
+        saver.save(self.sess, os.path.join(model_path, model_name))
+
+    def restore(self, model_path, model_name):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, os.path.join(model_path, model_name))
 
     def _discount_and_norm_rewards(self):
         # discount episode rewards
