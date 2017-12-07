@@ -38,7 +38,8 @@ class PolicyNetwork(object):
         conv1 = tf.layers.conv2d(
             inputs=input_layer,
             filters=16,
-            kernel_size=[3, 3],
+            kernel_size=[8, 8],
+            strides=4,
             padding="same",
             activation=tf.nn.relu)
 
@@ -49,7 +50,8 @@ class PolicyNetwork(object):
         conv2 = tf.layers.conv2d(
             inputs=pool1,
             filters=32,
-            kernel_size=[3, 3],
+            kernel_size=[4, 4],
+            strides=2,
             padding="same",
             activation=tf.nn.relu)
         pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
@@ -58,7 +60,7 @@ class PolicyNetwork(object):
         pool2_flat = tf.contrib.layers.flatten(pool2)
         layer = tf.layers.dense(
             inputs=pool2_flat,
-            units=200,
+            units=128,
             activation=tf.nn.tanh,  # tanh activation
             bias_initializer=tf.constant_initializer(0.1),
             name='fc1'
@@ -123,9 +125,12 @@ class PolicyNetwork(object):
         discounted_ep_rs = np.zeros_like(self.ep_rs)
         running_add = 0
         for t in reversed(range(0, len(self.ep_rs))):
+            # reset running_addd when one player gets point
+            #if self.ep_rs[t] != 0:
+            #    running_add = 0
             running_add = running_add * self.gamma + self.ep_rs[t]
             discounted_ep_rs[t] = running_add
-
+            
         # normalize episode rewards
         discounted_ep_rs -= np.mean(discounted_ep_rs)
         discounted_ep_rs /= np.std(discounted_ep_rs)

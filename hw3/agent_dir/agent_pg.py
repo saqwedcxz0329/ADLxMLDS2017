@@ -75,34 +75,44 @@ class Agent_PG(Agent):
         ##################
         total_episodes = 10000
         env.seed(seed)
-        for i in range(total_episodes):
-            cur_state = env.reset()
-            prev_state = None
-            self.init_game_setting()
-            done = False
-            #playing one game
-            while(not done):
-                state = cur_state - prev_state if prev_state is not None else cur_state
-                action = self.make_action(state, test=True)
+        
+        reward_list = []
+        try:
+            avg_vt = np.zeros(30)
+            for i in range(total_episodes):
+                cur_state = env.reset()
+                prev_state = None
+                self.init_game_setting()
+                done = False
+                #playing one game
+                while(not done):
+                    state = cur_state - prev_state if prev_state is not None else cur_state
+                    action = self.make_action(state, test=True)
 
-                prev_state = cur_state
-                cur_state, reward, done, info = env.step(action)
+                    prev_state = cur_state
+                    cur_state, reward, done, info = env.step(action)
+
+                    pre_gray_state = prepro(prev_state).reshape(-1)
+                    self.model.store_transition(pre_gray_state, action, reward)
+
+                episode_reward = sum(self.model.ep_rs)
+                if 'running_reward' not in globals():
+                    running_reward = episode_reward
+                else:
+                    running_reward = running_reward * 0.99 + episode_reward * 0.01
+
+                vt = self.model.train()
+                avg_vt[i % 30] = episode_reward
+                print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
+
+                reward_list.append(np.mean(avg_vt))
+                self.model.save(model_path, model_name)
                 
-                pre_gray_state = prepro(prev_state).reshape(-1)
-                self.model.store_transition(pre_gray_state, action, reward)
-
-            episode_reward = sum(self.model.ep_rs)
-            if 'running_reward' not in globals():
-                running_reward = episode_reward
-            else:
-                running_reward = running_reward * 0.99 + episode_reward * 0.01
-            print('Run %d episodes, reward: %d' % (i, running_reward))
-
-            vt = self.model.train()
-
-            self.model.save(model_path, model_name)        
-
-
+        except KeyboardInterrupt:
+            reward_file = open('reward.txt', 'w')
+            for reward in reward_list:
+                reward_file.write('{:.2f}\n'.format(reward))
+            reward_file.close()
 
     def make_action(self, observation, test=True):
         """
