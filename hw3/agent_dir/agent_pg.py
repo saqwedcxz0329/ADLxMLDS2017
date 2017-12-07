@@ -26,7 +26,6 @@ def prepro(o, image_size=[80, 80]):
     resized = scipy.misc.imresize(y, image_size)
     return np.expand_dims(resized.astype(np.float32), axis=2)
 
-
 class Agent_PG(Agent):
     def __init__(self, env, args):
         """
@@ -37,8 +36,9 @@ class Agent_PG(Agent):
         super(Agent_PG,self).__init__(env)
         
         n_features = 80 * 80 * 1
+        n_actions = 3  # stop:0 up:1 down:2
 
-        self.model = PolicyNetwork(env.get_action_space().n,
+        self.model = PolicyNetwork(n_actions,
                                    n_features,
                                    learning_rate=0.0001,
                                    reward_decay=0.9)
@@ -87,10 +87,10 @@ class Agent_PG(Agent):
                 #playing one game
                 while(not done):
                     state = cur_state - prev_state if prev_state is not None else cur_state
-                    action = self.make_action(state, test=True)
+                    actual_action, action = self.make_action(state, test=False)
 
                     prev_state = cur_state
-                    cur_state, reward, done, info = env.step(action)
+                    cur_state, reward, done, info = env.step(actual_action)
 
                     pre_gray_state = prepro(prev_state).reshape(-1)
                     self.model.store_transition(pre_gray_state, action, reward)
@@ -130,6 +130,20 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         observation = prepro(observation).reshape(-1)
-        return self.model.make_action(observation)
-        # return self.env.get_random_action()
-
+        action = self.model.make_action(observation)
+        actual_action = self._transfer_to_actual_action(action)
+        if test:
+            return actual_action
+        else:
+            return actual_action, action
+            
+    def _transfer_to_actual_action(self, action):
+        if action == 0:
+            actual_action = 0
+        elif action == 1:
+            actual_action = 2 # Up
+        elif action == 2:
+            actual_action = 5 # Down
+        else:
+            raise ValueError('Ivalid action!!')
+        return actual_action
