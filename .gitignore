@@ -1,6 +1,7 @@
 *.zip
 *.csv
 *.docx
+*.pyc
 */.vscode/
 */__pycache__/
 

@@ -33,14 +33,14 @@ def run(args):
         env = Environment(env_name, args)
         from agent_dir.agent_pg import Agent_PG
         agent = Agent_PG(env, args)
-        agent.train()
+        agent.train(env)
 
     if args.train_dqn:
         env_name = args.env_name or 'BreakoutNoFrameskip-v4'
         env = Environment(env_name, args, atari_wrapper=True)
         from agent_dir.agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
-        agent.train()
+        agent.train(env)
 
     if args.test_pg:
         env = Environment('Pong-v0', args, test=True)
