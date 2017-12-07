@@ -19,7 +19,7 @@ class PolicyNetwork(object):
 
         self._build_net()
         
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.sess.run(tf.global_variables_initializer())
 
@@ -37,8 +37,8 @@ class PolicyNetwork(object):
         # Convolutional Layer #1
         conv1 = tf.layers.conv2d(
             inputs=input_layer,
-            filters=32,
-            kernel_size=[5, 5],
+            filters=16,
+            kernel_size=[3, 3],
             padding="same",
             activation=tf.nn.relu)
 
@@ -49,7 +49,7 @@ class PolicyNetwork(object):
         conv2 = tf.layers.conv2d(
             inputs=pool1,
             filters=32,
-            kernel_size=[5, 5],
+            kernel_size=[3, 3],
             padding="same",
             activation=tf.nn.relu)
         pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
@@ -82,7 +82,7 @@ class PolicyNetwork(object):
             loss = tf.reduce_mean(neg_log_prob * self.tf_vt)
 
         with tf.name_scope('train'):
-            self.train_op = tf.train.AdamOptimizer(self.lr).minimize(loss)
+            self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(loss)
     
     def make_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={

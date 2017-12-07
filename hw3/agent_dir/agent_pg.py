@@ -40,7 +40,7 @@ class Agent_PG(Agent):
 
         self.model = PolicyNetwork(env.get_action_space().n,
                                    n_features,
-                                   learning_rate=0.1,
+                                   learning_rate=0.0001,
                                    reward_decay=0.9)
 
         if args.test_pg:
@@ -76,18 +76,21 @@ class Agent_PG(Agent):
         total_episodes = 10000
         env.seed(seed)
         for i in range(total_episodes):
-            prev_state = env.reset()
+            cur_state = env.reset()
+            prev_state = None
             self.init_game_setting()
             done = False
             #playing one game
             while(not done):
-                action = self.make_action(
-                    prev_state, test=True)  # 2: up, 3: down
+                state = cur_state - prev_state if prev_state is not None else cur_state
+                action = self.make_action(state, test=True)
 
+                prev_state = cur_state
                 cur_state, reward, done, info = env.step(action)
                 
                 pre_gray_state = prepro(prev_state).reshape(-1)
                 self.model.store_transition(pre_gray_state, action, reward)
+
             episode_reward = sum(self.model.ep_rs)
             if 'running_reward' not in globals():
                 running_reward = episode_reward
@@ -97,7 +100,6 @@ class Agent_PG(Agent):
 
             vt = self.model.train()
 
-            prev_state = cur_state
             self.model.save(model_path, model_name)        
 
 
