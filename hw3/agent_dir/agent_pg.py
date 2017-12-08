@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import scipy.misc
 
@@ -7,7 +9,7 @@ from agent_dir.policy_network import PolicyNetwork
 
 seed = 11037
 model_path = './models'
-model_name = 'model'
+model_name = sys.argv[1] if len(sys.argv) > 1 else 'model'
 
 def prepro(o, image_size=[80, 80]):
     """
@@ -73,7 +75,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        total_episodes = 10000
+        total_episodes = 100000
         env.seed(seed)
         
         reward_list = []
@@ -92,8 +94,8 @@ class Agent_PG(Agent):
                     prev_state = cur_state
                     cur_state, reward, done, info = env.step(actual_action)
 
-                    pre_gray_state = prepro(prev_state).reshape(-1)
-                    self.model.store_transition(pre_gray_state, action, reward)
+                    gray_state = prepro(state).reshape(-1)
+                    self.model.store_transition(gray_state, action, reward)
 
                 episode_reward = sum(self.model.ep_rs)
                 if 'running_reward' not in globals():
@@ -107,8 +109,7 @@ class Agent_PG(Agent):
 
                 reward_list.append(np.mean(avg_vt))
                 self.model.save(model_path, model_name)
-                
-        except KeyboardInterrupt:
+        except:
             reward_file = open('reward.txt', 'w')
             for reward in reward_list:
                 reward_file.write('{:.2f}\n'.format(reward))
@@ -143,7 +144,7 @@ class Agent_PG(Agent):
         elif action == 1:
             actual_action = 2 # Up
         elif action == 2:
-            actual_action = 5 # Down
+            actual_action = 3 # Down
         else:
             raise ValueError('Ivalid action!!')
         return actual_action
