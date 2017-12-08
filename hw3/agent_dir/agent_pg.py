@@ -63,7 +63,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        pass
+        self.prev_obs = None
 
 
     def train(self, env):
@@ -73,27 +73,24 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        total_episodes = 10000
+        total_episodes = 100000
         env.seed(seed)
         
         reward_list = []
         try:
             avg_vt = np.zeros(30)
             for i in range(total_episodes):
-                cur_state = env.reset()
-                prev_state = None
+                cur_obs = env.reset()
                 self.init_game_setting()
                 done = False
                 #playing one game
                 while(not done):
-                    state = cur_state - prev_state if prev_state is not None else cur_state
-                    actual_action, action = self.make_action(state, test=False)
+                    actual_action, action = self.make_action(cur_obs, test=False)
+                    
+                    cur_obs, reward, done, info = env.step(actual_action)
 
-                    prev_state = cur_state
-                    cur_state, reward, done, info = env.step(actual_action)
-
-                    pre_gray_state = prepro(prev_state).reshape(-1)
-                    self.model.store_transition(pre_gray_state, action, reward)
+                    gray_state = prepro(state).reshape(-1)
+                    self.model.store_transition(gray_state, action, reward)
 
                 episode_reward = sum(self.model.ep_rs)
                 if 'running_reward' not in globals():
@@ -108,7 +105,7 @@ class Agent_PG(Agent):
                 reward_list.append(np.mean(avg_vt))
                 self.model.save(model_path, model_name)
                 
-        except KeyboardInterrupt:
+        except:
             reward_file = open('reward.txt', 'w')
             for reward in reward_list:
                 reward_file.write('{:.2f}\n'.format(reward))
@@ -129,8 +126,11 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        observation = prepro(observation).reshape(-1)
-        action = self.model.make_action(observation)
+        state = observation - self.prev_obs if self.prev_obs is not None else observation
+        self.prev_obs = observation
+
+        gray_state = prepro(state).reshape(-1)
+        action = self.model.make_action(gray_state)
         actual_action = self._transfer_to_actual_action(action)
         if test:
             return actual_action
@@ -143,7 +143,7 @@ class Agent_PG(Agent):
         elif action == 1:
             actual_action = 2 # Up
         elif action == 2:
-            actual_action = 5 # Down
+            actual_action = 3 # Down
         else:
             raise ValueError('Ivalid action!!')
         return actual_action

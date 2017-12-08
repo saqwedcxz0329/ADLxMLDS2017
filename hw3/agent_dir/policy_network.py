@@ -44,20 +44,20 @@ class PolicyNetwork(object):
             activation=tf.nn.relu)
 
         # Pooling Layer #1
-        pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+        # pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
         # Convolutional Layer #2 and Pooling Layer #2
         conv2 = tf.layers.conv2d(
-            inputs=pool1,
+            inputs=conv1,
             filters=32,
             kernel_size=[4, 4],
             strides=2,
             padding="same",
             activation=tf.nn.relu)
-        pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+        # pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
     
         # fc1
-        pool2_flat = tf.contrib.layers.flatten(pool2)
+        pool2_flat = tf.contrib.layers.flatten(conv2)
         layer = tf.layers.dense(
             inputs=pool2_flat,
             units=128,
@@ -126,8 +126,8 @@ class PolicyNetwork(object):
         running_add = 0
         for t in reversed(range(0, len(self.ep_rs))):
             # reset running_addd when one player gets point
-            #if self.ep_rs[t] != 0:
-            #    running_add = 0
+            if self.ep_rs[t] != 0:
+               running_add = 0
             running_add = running_add * self.gamma + self.ep_rs[t]
             discounted_ep_rs[t] = running_add
             
