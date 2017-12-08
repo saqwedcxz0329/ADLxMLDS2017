@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 import scipy.misc
 
@@ -82,8 +80,7 @@ class Agent_PG(Agent):
         total_episodes = 100000
         env.seed(seed)
         
-        reward_list = []
-        try:
+        with open('reward.txt', 'w') as reward_file:
             avg_vt = np.zeros(30)
             for i in range(total_episodes):
                 cur_obs = env.reset()
@@ -106,16 +103,9 @@ class Agent_PG(Agent):
                 vt = self.model.train()
                 avg_vt[i % 30] = episode_reward
                 print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
-
-                reward_list.append(np.mean(avg_vt))
+                reward_file.write('{},{}\n'.format(i, episode_reward))
                 self.model.save(self.model_folder, self.store_model_name)
                 
-        except:
-            reward_file = open('reward.txt', 'w')
-            for reward in reward_list:
-                reward_file.write('{:.2f}\n'.format(reward))
-            reward_file.close()
-
     def make_action(self, observation, test=True):
         """
         Return predicted action of your agent
