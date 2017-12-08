@@ -8,8 +8,6 @@ from environment import Environment
 from agent_dir.policy_network import PolicyNetwork
 
 seed = 11037
-model_path = './models'
-model_name = sys.argv[1] if len(sys.argv) > 1 else 'model'
 
 def prepro(o, image_size=[80, 80]):
     """
@@ -45,10 +43,17 @@ class Agent_PG(Agent):
                                    learning_rate=0.0001,
                                    reward_decay=0.9)
 
+        self.model_folder = args.models_dir
+        self.store_model_name = args.store_pg_model_name
+        
+        if args.trained_pg_model_name is not None:
+            self.trained_model_name = args.trained_pg_model_name
+            self.model.restore(self.model_folder, self.trained_model_name)
+
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
-            self.model.restore(model_path, model_name)
+            self.model.restore(self.model_folder, self.trained_model_name)
 
         ##################
         # YOUR CODE HERE #
@@ -104,7 +109,7 @@ class Agent_PG(Agent):
                 print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
 
                 reward_list.append(np.mean(avg_vt))
-                self.model.save(model_path, model_name)
+                self.model.save(self.model_folder, self.store_model_name)
                 
         except:
             reward_file = open('reward.txt', 'w')
