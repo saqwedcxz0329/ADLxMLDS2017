@@ -91,11 +91,10 @@ class Agent_PG(Agent):
                 done = False
                 #playing one game
                 while(not done):
-                    actual_action, action = self.make_action(cur_obs, test=False)
+                    actual_action, action, gray_state = self.make_action(cur_obs, test=False)
                     
                     cur_obs, reward, done, info = env.step(actual_action)
 
-                    gray_state = prepro(state).reshape(-1)
                     self.model.store_transition(gray_state, action, reward)
 
                 episode_reward = sum(self.model.ep_rs)
@@ -141,7 +140,7 @@ class Agent_PG(Agent):
         if test:
             return actual_action
         else:
-            return actual_action, action
+            return actual_action, action, gray_state
             
     def _transfer_to_actual_action(self, action):
         if action == 0:
