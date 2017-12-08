@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import scipy.misc
 
@@ -7,7 +9,7 @@ from agent_dir.policy_network import PolicyNetwork
 
 seed = 11037
 model_path = './models'
-model_name = 'model'
+model_name = sys.argv[1] if len(sys.argv) > 1 else 'model'
 
 def prepro(o, image_size=[80, 80]):
     """
@@ -64,7 +66,6 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         self.prev_obs = None
-
 
     def train(self, env):
         """
