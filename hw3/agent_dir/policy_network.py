@@ -22,6 +22,7 @@ class PolicyNetwork(object):
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.15)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
 
     def _build_net(self):
         with tf.name_scope('inputs'):
@@ -113,12 +114,10 @@ class PolicyNetwork(object):
         return discounted_ep_rs_norm
     
     def save(self, model_path, model_name):
-        saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
-        saver.save(self.sess, os.path.join(model_path, model_name))
+        self.saver.save(self.sess, os.path.join(model_path, model_name))
 
     def restore(self, model_path, model_name):
-        saver = tf.train.Saver()
-        saver.restore(self.sess, os.path.join(model_path, model_name))
+        self.saver.restore(self.sess, os.path.join(model_path, model_name))
 
     def _discount_and_norm_rewards(self):
         # discount episode rewards
