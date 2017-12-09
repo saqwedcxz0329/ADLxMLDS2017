@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.misc
+from memory_profiler import profile
 
 from agent_dir.agent import Agent
 from environment import Environment
@@ -82,29 +83,34 @@ class Agent_PG(Agent):
         
         avg_vt = np.zeros(30)
         for i in range(total_episodes):
-            cur_obs = env.reset()
-            self.init_game_setting()
-            done = False
-            #playing one game
-            while(not done):
-                actual_action, action, gray_state = self.make_action(cur_obs, test=False)
-                
-                cur_obs, reward, done, info = env.step(actual_action)
+            self._train(i, env, avg_vt)
+    
+    fp = open('memory_profiler.log', 'w')
+    @profile(stream=fp)
+    def _train(self, i, env, avg_vt):
+        cur_obs = env.reset()
+        self.init_game_setting()
+        done = False
+        #playing one game
+        while(not done):
+            actual_action, action, gray_state = self.make_action(cur_obs, test=False)
 
-                self.model.store_transition(gray_state, action, reward)
+            cur_obs, reward, done, info = env.step(actual_action)
 
-            episode_reward = sum(self.model.ep_rs)
-            if 'running_reward' not in globals():
-                running_reward = episode_reward
-            else:
-                running_reward = running_reward * 0.99 + episode_reward * 0.01
+            self.model.store_transition(gray_state, action, reward)
 
-            vt = self.model.train()
-            avg_vt[i % 30] = episode_reward
-            print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
-            with open('reward.txt', 'a') as reward_file:
-                reward_file.write('{},{}\n'.format(i, episode_reward))
-            self.model.save(self.model_folder, self.store_model_name)
+        episode_reward = sum(self.model.ep_rs)
+        if 'running_reward' not in globals():
+            running_reward = episode_reward
+        else:
+            running_reward = running_reward * 0.99 + episode_reward * 0.01
+
+        vt = self.model.train()
+        avg_vt[i % 30] = episode_reward
+        print('Run %d episodes, reward: %d, avg_reward: %.3f' %(i, episode_reward, np.mean(avg_vt)))
+        with open('reward.txt', 'a') as reward_file:
+            reward_file.write('{},{}\n'.format(i, episode_reward))
+        self.model.save(self.model_folder, self.store_model_name)
             
     def make_action(self, observation, test=True):
         """
