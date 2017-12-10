@@ -40,7 +40,7 @@ def run(args):
         env = Environment(env_name, args, atari_wrapper=True)
         from agent_dir.agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
-        agent.train(env)
+        agent.train()
 
     if args.test_pg:
         env = Environment('Pong-v0', args, test=True)
