@@ -81,6 +81,9 @@ class Agent_PG(Agent):
         env.seed(seed)
         
         avg_vt = np.zeros(30)
+        
+        best_avg_reward = -100
+        counter = 0
         for i in range(total_episodes):
             cur_obs = env.reset()
             self.init_game_setting()
@@ -104,7 +107,10 @@ class Agent_PG(Agent):
             print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
             with open('reward.txt', 'a') as reward_file:
                 reward_file.write('{},{}\n'.format(i, episode_reward))
-            self.model.save(self.model_folder, self.store_model_name)
+            if counter >= 30 and np.mean(avg_vt) > best_avg_reward:
+                self.model.save(self.model_folder, self.store_model_name, i)
+                best_avg_reward = np.mean(avg_vt)
+            counter += 1
             
     def make_action(self, observation, test=True):
         """
