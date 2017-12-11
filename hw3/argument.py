@@ -10,6 +10,8 @@ def add_arguments(parser):
 
     parser.add_argument('--models_dir', default='models', help='where are the models')
     parser.add_argument('--trained_pg_model_name', default=None, help='pg pretrained model')
-    parser.add_argument('--store_pg_model_name', default='model_pg', help='trained pg model to store')
+    parser.add_argument('--store_pg_model_name', default='model_pg', help='pg model to store')
+    parser.add_argument('--trained_dqn_model_name', default=None, help='dqn pretrained model')
+    parser.add_argument('--store_dqn_model_name', default='model_dqn', help='dqn model to store')
 
     return parser

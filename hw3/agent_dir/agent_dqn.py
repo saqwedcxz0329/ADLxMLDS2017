@@ -22,15 +22,24 @@ class Agent_DQN(Agent):
 
         self.model = DeepQNetwork(n_actions, n_features,
                       learning_rate=0.01,
-                      reward_decay=0.9,
+                      reward_decay=0.99,
                       e_greedy=0.9,
-                      replace_target_iter=200,
-                      memory_size=2000,
+                      replace_target_iter=1000,
+                      memory_size=10000,
+                      batch_size=32,
                       )
+
+        self.model_folder = args.models_dir
+        self.store_model_name = args.store_dqn_model_name
+        
+        if args.trained_dqn_model_name is not None:
+            self.trained_model_name = args.trained_dqn_model_name
+            self.model.restore(self.model_folder, self.trained_model_name)
 
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
+            self.model.restore(self.model_folder, self.trained_model_name)
 
         ##################
         # YOUR CODE HERE #
@@ -57,8 +66,12 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        total_episodes = 100000
+        total_episodes = 100000000
+        start_learning_step = 10000
         step = 0
+        avg_rs = np.zeros(30)
+        eps_rs_list = []
+        best_avg_rs = -100
         self.env.seed(seed)
 
         for i in range(total_episodes):
@@ -75,15 +88,25 @@ class Agent_DQN(Agent):
 
                 cur_flat_obs = cur_obs.reshape(-1)
                 next_flat_obs = next_obs.reshape(-1)
+                eps_rs_list.append(reward)
                 self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs)
 
-                if (step > 200) and (step % 5 == 0):
+                if (step > start_learning_step) and (step % 4 == 0):
                     self.model.train()
 
                 # swap observation
                 cur_obs = next_obs
 
                 step += 1
+            episode_reward = sum(eps_rs)
+            avg_rs[i%30] = episode_reward
+            eps_rs_list = []
+            print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_rs)))
+            with open('reward_dqn.txt', 'a') as reward_file:
+                reward_file.write('{},{}\n'.format(i, episode_reward))
+            if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):
+                best_avg_rs = np.mean(avg_rs)
+                self.model.save(self.model_folder, self.store_model_name, i)
 
 
     def make_action(self, observation, test=True):

@@ -15,7 +15,6 @@ class DeepQNetwork(object):
             memory_size=500,
             batch_size=32,
             e_greedy_increment=None,
-            output_graph=False,
     ):
         self.n_actions = n_actions
         self.n_features = n_features
@@ -50,7 +49,6 @@ class DeepQNetwork(object):
             tf.summary.FileWriter("logs/", self.sess.graph)
 
         self.sess.run(tf.global_variables_initializer())
-        self.cost_his = []
 
     def _build_net(self):
         # ------------------ all inputs ------------------------
@@ -60,17 +58,18 @@ class DeepQNetwork(object):
         self.a = tf.placeholder(tf.int32, [None, ], name='a')  # input Action
 
         w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+        n_neuron = 512
 
         # ------------------ build evaluate_net ------------------
         with tf.variable_scope('eval_net'):
-            e1 = tf.layers.dense(self.s, 20, tf.nn.relu, kernel_initializer=w_initializer,
+            e1 = tf.layers.dense(self.s, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='e1')
             self.q_eval = tf.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='q')
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):
-            t1 = tf.layers.dense(self.s_, 20, tf.nn.relu, kernel_initializer=w_initializer,
+            t1 = tf.layers.dense(self.s_, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='t1')
             self.q_next = tf.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='t2')
@@ -129,8 +128,12 @@ class DeepQNetwork(object):
                 self.s_: batch_memory[:, -self.n_features:],
             })
 
-        self.cost_his.append(cost)
-
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
         self.learn_step_counter += 1
+
+    def save(self, model_path, model_name, episode):
+        self.saver.save(self.sess, os.path.join(model_path, model_name), global_step=episode)
+
+    def restore(self, model_path, model_name):
+        self.saver.restore(self.sess, os.path.join(model_path, model_name))
