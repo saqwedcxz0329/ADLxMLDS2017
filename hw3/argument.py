@@ -13,5 +13,6 @@ def add_arguments(parser):
     parser.add_argument('--store_pg_model_name', default='model_pg', help='pg model to store')
     parser.add_argument('--trained_dqn_model_name', default=None, help='dqn pretrained model')
     parser.add_argument('--store_dqn_model_name', default='model_dqn', help='dqn model to store')
+    parser.add_argument('--reward_file_name', default='reward.txt', help='record reward')    
 
     return parser

@@ -31,6 +31,7 @@ class Agent_DQN(Agent):
 
         self.model_folder = args.models_dir
         self.store_model_name = args.store_dqn_model_name
+        self.reward_file_name = args.reward_file_name
         
         if args.trained_dqn_model_name is not None:
             self.trained_model_name = args.trained_dqn_model_name
@@ -102,7 +103,7 @@ class Agent_DQN(Agent):
             avg_rs[i%30] = episode_reward
             eps_rs_list = []
             print('Run %d episodes, reward: %d, avg_reward: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), step))
-            with open('reward_dqn.txt', 'a') as reward_file:
+            with open(self.reward_file_name, 'a') as reward_file:
                 reward_file.write('{},{}\n'.format(i, episode_reward))
             if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):
                 best_avg_rs = np.mean(avg_rs)
