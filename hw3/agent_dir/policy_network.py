@@ -19,7 +19,7 @@ class PolicyNetwork(object):
 
         self._build_net()
         
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.15)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(max_to_keep=1)
