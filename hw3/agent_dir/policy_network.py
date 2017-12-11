@@ -22,7 +22,7 @@ class PolicyNetwork(object):
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.sess.run(tf.global_variables_initializer())
-        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
+        self.saver = tf.train.Saver(max_to_keep=1)
 
     def _build_net(self):
         with tf.name_scope('inputs'):
@@ -113,8 +113,8 @@ class PolicyNetwork(object):
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []    # empty episode data
         return discounted_ep_rs_norm
     
-    def save(self, model_path, model_name):
-        self.saver.save(self.sess, os.path.join(model_path, model_name))
+    def save(self, model_path, model_name, episode):
+        self.saver.save(self.sess, os.path.join(model_path, model_name), global_step=episode)
 
     def restore(self, model_path, model_name):
         self.saver.restore(self.sess, os.path.join(model_path, model_name))
