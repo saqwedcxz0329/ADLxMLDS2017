@@ -98,10 +98,10 @@ class Agent_DQN(Agent):
                 cur_obs = next_obs
 
                 step += 1
-            episode_reward = sum(eps_rs)
+            episode_reward = sum(eps_rs_list)
             avg_rs[i%30] = episode_reward
             eps_rs_list = []
-            print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_rs)))
+            print('Run %d episodes, reward: %d, avg_reward: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), step))
             with open('reward_dqn.txt', 'a') as reward_file:
                 reward_file.write('{},{}\n'.format(i, episode_reward))
             if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):

@@ -41,14 +41,11 @@ class DeepQNetwork(object):
 
         with tf.variable_scope('soft_replacement'):
             self.target_replace_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
-
-        self.sess = tf.Session()
-
-        if output_graph:
-            # $ tensorboard --logdir=logs
-            tf.summary.FileWriter("logs/", self.sess.graph)
-
+        
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
+        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.train.Saver(max_to_keep=1)
 
     def _build_net(self):
         # ------------------ all inputs ------------------------
