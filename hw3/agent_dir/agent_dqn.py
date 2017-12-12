@@ -18,8 +18,13 @@ class Agent_DQN(Agent):
         observation_space = self.env.get_observation_space()
         action_space = self.env.get_action_space()
         n_features = observation_space.shape[0] * observation_space.shape[1] * observation_space.shape[2]
-        n_actions = action_space.n
+        n_actions = 2  # right:0 left:1
 
+
+        self.model_folder = args.models_dir
+        self.store_model_name = args.store_dqn_model_name
+        self.reward_file_name = args.reward_file_name
+        
         self.model = DeepQNetwork(n_actions, n_features,
                       learning_rate=0.01,
                       reward_decay=0.99,
@@ -29,11 +34,6 @@ class Agent_DQN(Agent):
                       batch_size=32,
                       e_greedy_increment=0.95/1e6
                       )
-
-        self.model_folder = args.models_dir
-        self.store_model_name = args.store_dqn_model_name
-        self.reward_file_name = args.reward_file_name
-        
         if args.trained_dqn_model_name is not None:
             self.trained_model_name = args.trained_dqn_model_name
             self.model.restore(self.model_folder, self.trained_model_name)
@@ -41,6 +41,7 @@ class Agent_DQN(Agent):
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
+            self.model.epsilon = 0.9
             self.model.restore(self.model_folder, self.trained_model_name)
 
         ##################
@@ -83,10 +84,10 @@ class Agent_DQN(Agent):
             #playing one game
             while(not done):
                 # RL choose action based on observation
-                action = self.make_action(cur_obs)
+                actual_action, action = self.make_action(cur_obs)
 
                 # RL take action and get next observation and reward
-                next_obs, reward, done, info = self.env.step(action)
+                next_obs, reward, done, info = self.env.step(actual_action)
 
                 cur_flat_obs = cur_obs.reshape(-1)
                 next_flat_obs = next_obs.reshape(-1)
@@ -127,5 +128,15 @@ class Agent_DQN(Agent):
         # YOUR CODE HERE #
         ##################
         observation = observation.reshape(-1)
-        return self.model.make_action(observation)
+        action = self.model.make_action(observation)
+        actual_action = self._transfer_to_actual_action(action)
+        return actual_action, action
 
+    def _transfer_to_actual_action(self, action):
+        if action == 0:
+            actual_action = 2 # Right
+        elif action == 1:
+            actual_action = 3 # Left
+        else:
+            raise ValueError('Ivalid action!!')
+        return actual_action
