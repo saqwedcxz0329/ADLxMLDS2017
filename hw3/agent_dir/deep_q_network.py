@@ -10,22 +10,22 @@ class DeepQNetwork(object):
             n_features,
             learning_rate=0.01,
             reward_decay=0.9,
-            e_greedy=0.9,
+            epsilon_min=0.05,
             replace_target_iter=300,
             memory_size=500,
             batch_size=32,
-            e_greedy_increment=None,
+            epsilon_decrease=None,
     ):
         self.n_actions = n_actions
         self.n_features = n_features
         self.lr = learning_rate
         self.gamma = reward_decay
-        self.epsilon_max = e_greedy
+        self.epsilon_min = epsilon_min
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
         self.batch_size = batch_size
-        self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.epsilon_decrease = epsilon_decrease
+        self.epsilon = 1 if epsilon_decrease is not None else self.epsilon_min
 
         # total learning step
         self.learn_step_counter = 0
@@ -157,13 +157,18 @@ class DeepQNetwork(object):
         # to have batch dimension when feed into tf placeholder
         observation = observation[np.newaxis, :]
 
-        if np.random.uniform() < self.epsilon:
+        if np.random.uniform() > self.epsilon:
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
         else:
             action = np.random.randint(0, self.n_actions)
         return action
+    
+    def update_epsilon(self):
+        # increasing epsilon
+        self.epsilon = self.epsilon / self.epsilon_decrease if self.epsilon > self.epsilon_min else self.epsilon_min
+
 
     def train(self):
         # check to replace target parameters
@@ -187,8 +192,6 @@ class DeepQNetwork(object):
                 self.s_: batch_memory[:, -self.n_features:],
             })
 
-        # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
         self.learn_step_counter += 1
 
     def save(self, model_path, model_name, episode):

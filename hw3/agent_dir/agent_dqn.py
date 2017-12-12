@@ -23,10 +23,11 @@ class Agent_DQN(Agent):
         self.model = DeepQNetwork(n_actions, n_features,
                       learning_rate=0.01,
                       reward_decay=0.99,
-                      e_greedy=0.9,
+                      epsilon_min=0.05,
                       replace_target_iter=1000,
                       memory_size=10000,
                       batch_size=32,
+                      epsilon_decrease=1e6
                       )
 
         self.model_folder = args.models_dir
@@ -94,7 +95,7 @@ class Agent_DQN(Agent):
 
                 if (step > start_learning_step) and (step % 4 == 0):
                     self.model.train()
-
+                self.model.update_epsilon()
                 # swap observation
                 cur_obs = next_obs
 
