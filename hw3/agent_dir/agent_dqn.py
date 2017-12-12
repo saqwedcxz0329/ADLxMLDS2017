@@ -84,7 +84,7 @@ class Agent_DQN(Agent):
             #playing one game
             while(not done):
                 # RL choose action based on observation
-                actual_action, action = self.make_action(cur_obs)
+                actual_action, action = self.make_action(cur_obs, test=False)
 
                 # RL take action and get next observation and reward
                 next_obs, reward, done, info = self.env.step(actual_action)
@@ -101,6 +101,7 @@ class Agent_DQN(Agent):
                 cur_obs = next_obs
 
                 step += 1
+
             episode_reward = sum(eps_rs_list)
             avg_rs[i%100] = episode_reward
             eps_rs_list = []
@@ -130,7 +131,10 @@ class Agent_DQN(Agent):
         observation = observation.reshape(-1)
         action = self.model.make_action(observation)
         actual_action = self._transfer_to_actual_action(action)
-        return actual_action, action
+        if test:
+            return actual_action
+        else:
+            return actual_action, action
 
     def _transfer_to_actual_action(self, action):
         if action == 0:

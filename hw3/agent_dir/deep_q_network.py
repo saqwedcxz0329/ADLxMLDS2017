@@ -56,7 +56,7 @@ class DeepQNetwork(object):
         self.r = tf.placeholder(tf.float32, [None, ], name='r')  # input Reward
         self.a = tf.placeholder(tf.int32, [None, ], name='a')  # input Action
 
-        w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+        # w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
         n_neuron = 512
 
         eval_input = tf.reshape(self.s, [-1, 84, 84, 4])
@@ -66,7 +66,7 @@ class DeepQNetwork(object):
         with tf.variable_scope('eval_net'):
 
             # Convolutional Layer #1
-            conv1 = tf.layers.conv2d(
+            e_conv1 = tf.layers.conv2d(
                 inputs=eval_input,
                 filters=32,
                 kernel_size=[8, 8],
@@ -75,8 +75,8 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
             
             # Convolutional Layer #2
-            conv2 = tf.layers.conv2d(
-                inputs=conv1,
+            e_conv2 = tf.layers.conv2d(
+                inputs=e_conv1,
                 filters=64,
                 kernel_size=[4, 4],
                 strides=2,
@@ -84,24 +84,31 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
             
             # Convolutional Layer #3
-            conv3 = tf.layers.conv2d(
-                inputs=conv2,
+            e_conv3 = tf.layers.conv2d(
+                inputs=e_conv2,
                 filters=64,
                 kernel_size=[3, 3],
                 strides=1,
                 padding="same",
                 activation=tf.nn.relu)
 
-            conv3_flat = tf.contrib.layers.flatten(conv3)
-            e1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
-                                 bias_initializer=b_initializer, name='e1')
-            self.q_eval = tf.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
-                                          bias_initializer=b_initializer, name='q')
+            e_conv3_flat = tf.contrib.layers.flatten(e_conv3)
+            e1 = tf.layers.dense(e_conv3_flat, 
+                                n_neuron, 
+                                tf.nn.relu, 
+                                # kernel_initializer=w_initializer,
+                                # bias_initializer=b_initializer, 
+                                name='e1')
+            self.q_eval = tf.layers.dense(e1,
+                                self.n_actions, 
+                                # kernel_initializer=w_initializer,
+                                # bias_initializer=b_initializer,
+                                name='q')
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):
             # Convolutional Layer #1
-            conv1 = tf.layers.conv2d(
+            t_conv1 = tf.layers.conv2d(
                 inputs=target_input,
                 filters=32,
                 kernel_size=[8, 8],
@@ -110,8 +117,8 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
             
             # Convolutional Layer #2
-            conv2 = tf.layers.conv2d(
-                inputs=conv1,
+            t_conv2 = tf.layers.conv2d(
+                inputs=t_conv1,
                 filters=64,
                 kernel_size=[4, 4],
                 strides=2,
@@ -119,19 +126,26 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
             
             # Convolutional Layer #3
-            conv3 = tf.layers.conv2d(
-                inputs=conv2,
+            t_conv3 = tf.layers.conv2d(
+                inputs=t_conv2,
                 filters=64,
                 kernel_size=[3, 3],
                 strides=1,
                 padding="same",
                 activation=tf.nn.relu)
 
-            conv3_flat = tf.contrib.layers.flatten(conv3)
-            t1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
-                                 bias_initializer=b_initializer, name='t1')
-            self.q_next = tf.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
-                                          bias_initializer=b_initializer, name='t2')
+            t_conv3_flat = tf.contrib.layers.flatten(t_conv3)
+            t1 = tf.layers.dense(t_conv3_flat,
+                                n_neuron, 
+                                tf.nn.relu, 
+                                # kernel_initializer=w_initializer,
+                                # bias_initializer=b_initializer,
+                                name='t1')
+            self.q_next = tf.layers.dense(t1,
+                                self.n_actions, 
+                                # kernel_initializer=w_initializer,
+                                # bias_initializer=b_initializer,
+                                name='t2')
 
         with tf.variable_scope('q_target'):
             q_target = self.r + self.gamma * tf.reduce_max(self.q_next, axis=1, name='Qmax_s_')    # shape=(None, )
@@ -161,6 +175,7 @@ class DeepQNetwork(object):
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
+            # print(actions_value)
         else:
             action = np.random.randint(0, self.n_actions)
         return action
