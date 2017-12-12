@@ -94,7 +94,7 @@ class Agent_DQN(Agent):
 
                 if (step > start_learning_step) and (step % 4 == 0):
                     self.model.train()
-
+                self.model.update_epsilon()
                 # swap observation
                 cur_obs = next_obs
 
