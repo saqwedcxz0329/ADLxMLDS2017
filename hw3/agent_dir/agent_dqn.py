@@ -130,7 +130,10 @@ class Agent_DQN(Agent):
         observation = observation.reshape(-1)
         action = self.model.make_action(observation)
         actual_action = self._transfer_to_actual_action(action)
-        return actual_action, action
+        if test:
+            return actual_action
+        else:
+            return actual_action, action
 
     def _transfer_to_actual_action(self, action):
         if action == 0:
