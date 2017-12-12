@@ -43,7 +43,8 @@ class Agent_PG(Agent):
 
         self.model_folder = args.models_dir
         self.store_model_name = args.store_pg_model_name
-        
+        self.reward_file_name = args.reward_file_name
+
         if args.trained_pg_model_name is not None:
             self.trained_model_name = args.trained_pg_model_name
             self.model.restore(self.model_folder, self.trained_model_name)
@@ -105,7 +106,7 @@ class Agent_PG(Agent):
             vt = self.model.train()
             avg_vt[i % 30] = episode_reward
             print('Run %d episodes, reward: %d, avg_reward: %.3f' % (i, episode_reward, np.mean(avg_vt)))
-            with open('reward.txt', 'a') as reward_file:
+            with open(self.reward_file_name, 'a') as reward_file:
                 reward_file.write('{},{}\n'.format(i, episode_reward))
             if counter >= 30 and np.mean(avg_vt) > best_avg_reward:
                 self.model.save(self.model_folder, self.store_model_name, i)
