@@ -91,7 +91,7 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
 
             conv3_flat = tf.contrib.layers.flatten(conv3)
-            e1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
+            e1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.leaky_relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='e1')
             self.q_eval = tf.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='q')
@@ -126,7 +126,7 @@ class DeepQNetwork(object):
                 activation=tf.nn.relu)
 
             conv3_flat = tf.contrib.layers.flatten(conv3)
-            t1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.relu, kernel_initializer=w_initializer,
+            t1 = tf.layers.dense(conv3_flat, n_neuron, tf.nn.leaky_relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='t1')
             self.q_next = tf.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='t2')

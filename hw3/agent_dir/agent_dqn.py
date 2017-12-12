@@ -70,7 +70,7 @@ class Agent_DQN(Agent):
         total_episodes = 100000000
         start_learning_step = 10000
         step = 0
-        avg_rs = np.zeros(30)
+        avg_rs = np.zeros(100)
         eps_rs_list = []
         best_avg_rs = -100
         self.env.seed(seed)
@@ -100,7 +100,7 @@ class Agent_DQN(Agent):
 
                 step += 1
             episode_reward = sum(eps_rs_list)
-            avg_rs[i%30] = episode_reward
+            avg_rs[i%100] = episode_reward
             eps_rs_list = []
             print('Run %d episodes, reward: %d, avg_reward: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), step))
             with open(self.reward_file_name, 'a') as reward_file:
