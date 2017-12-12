@@ -42,8 +42,10 @@ class DeepQNetwork(object):
         with tf.variable_scope('soft_replacement'):
             self.target_replace_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
         
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
-        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = 0.5
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config = config)
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(max_to_keep=1)
 
