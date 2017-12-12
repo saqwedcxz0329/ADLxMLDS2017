@@ -23,11 +23,11 @@ class Agent_DQN(Agent):
         self.model = DeepQNetwork(n_actions, n_features,
                       learning_rate=0.01,
                       reward_decay=0.99,
-                      epsilon_min=0.05,
+                      e_greedy=0.95,
                       replace_target_iter=1000,
                       memory_size=10000,
                       batch_size=32,
-                      epsilon_decrease=1e6
+                      e_greedy_increment=0.95/1e6
                       )
 
         self.model_folder = args.models_dir
@@ -103,7 +103,7 @@ class Agent_DQN(Agent):
             episode_reward = sum(eps_rs_list)
             avg_rs[i%100] = episode_reward
             eps_rs_list = []
-            print('Run %d episodes, reward: %d, avg_reward: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), step))
+            print('Run %d episodes, reward: %d, avg_reward: %.3f, epsilon: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), self.model.epsilon, step))
             with open(self.reward_file_name, 'a') as reward_file:
                 reward_file.write('{},{}\n'.format(i, episode_reward))
             if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):
