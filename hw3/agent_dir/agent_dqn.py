@@ -125,5 +125,6 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        return self.env.get_random_action()
+        observation = observation.reshape(-1)
+        return self.model.make_action(observation)
 
