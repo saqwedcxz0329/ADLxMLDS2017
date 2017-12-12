@@ -20,6 +20,10 @@ class Agent_DQN(Agent):
         n_features = observation_space.shape[0] * observation_space.shape[1] * observation_space.shape[2]
         n_actions = action_space.n
 
+        self.model_folder = args.models_dir
+        self.store_model_name = args.store_dqn_model_name
+        self.reward_file_name = args.reward_file_name
+        
         self.model = DeepQNetwork(n_actions, n_features,
                       learning_rate=0.01,
                       reward_decay=0.99,
@@ -29,11 +33,6 @@ class Agent_DQN(Agent):
                       batch_size=32,
                       e_greedy_increment=0.95/1e6
                       )
-
-        self.model_folder = args.models_dir
-        self.store_model_name = args.store_dqn_model_name
-        self.reward_file_name = args.reward_file_name
-        
         if args.trained_dqn_model_name is not None:
             self.trained_model_name = args.trained_dqn_model_name
             self.model.restore(self.model_folder, self.trained_model_name)
@@ -41,6 +40,7 @@ class Agent_DQN(Agent):
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
+            self.model.epsilon = 0.9
             self.model.restore(self.model_folder, self.trained_model_name)
 
         ##################
