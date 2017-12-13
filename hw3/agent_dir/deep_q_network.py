@@ -2,6 +2,26 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import math_ops
+
+def leaky_relu(features, alpha=0.01, name=None):
+  """Compute the Leaky ReLU activation function.
+  "Rectifier Nonlinearities Improve Neural Network Acoustic Models"
+  AL Maas, AY Hannun, AY Ng - Proc. ICML, 2013
+  http://web.stanford.edu/~awni/papers/relu_hybrid_icml2013_final.pdf
+  Args:
+    features: A `Tensor` representing preactivation values.
+    alpha: Slope of the activation function at x < 0.
+    name: A name for the operation (optional).
+  Returns:
+    The activation value.
+  """
+  with ops.name_scope(name, "LeakyRelu", [features, alpha]):
+    features = ops.convert_to_tensor(features, name="features")
+    alpha = ops.convert_to_tensor(alpha, name="alpha")
+    return math_ops.maximum(alpha * features, features)
+
 
 class DeepQNetwork(object):
     def __init__(
@@ -9,7 +29,7 @@ class DeepQNetwork(object):
             n_actions,
             n_features,
             learning_rate=0.01,
-            reward_decay=0.9,
+            gamma=0.9,
             e_greedy=0.9,
             replace_target_iter=300,
             memory_size=500,
@@ -19,7 +39,7 @@ class DeepQNetwork(object):
         self.n_actions = n_actions
         self.n_features = n_features
         self.lr = learning_rate
-        self.gamma = reward_decay
+        self.gamma = gamma
         self.epsilon_max = e_greedy
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
@@ -97,7 +117,7 @@ class DeepQNetwork(object):
             e_conv3_flat = tf.contrib.layers.flatten(e_conv3)
             e1 = tf.layers.dense(e_conv3_flat, 
                                 n_neuron, 
-                                tf.nn.relu, 
+                                leaky_relu, 
                                 # kernel_initializer=w_initializer,
                                 # bias_initializer=b_initializer, 
                                 name='e1')
@@ -139,7 +159,7 @@ class DeepQNetwork(object):
             t_conv3_flat = tf.contrib.layers.flatten(t_conv3)
             t1 = tf.layers.dense(t_conv3_flat,
                                 n_neuron, 
-                                tf.nn.relu, 
+                                leaky_relu, 
                                 # kernel_initializer=w_initializer,
                                 # bias_initializer=b_initializer,
                                 name='t1')
@@ -158,7 +178,7 @@ class DeepQNetwork(object):
         with tf.variable_scope('loss'):
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval_wrt_a, name='TD_error'))
         with tf.variable_scope('train'):
-            self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+            self._train_op = tf.train.RMSPropOptimizer(self.lr, decay=0.99).minimize(self.loss)
 
     def store_transition(self, s, a, r, s_, done):
         done = 1. if done else 0.
@@ -192,11 +212,6 @@ class DeepQNetwork(object):
         
 
     def train(self):
-        # check to replace target parameters
-        # if self.learn_step_counter % self.replace_target_iter == 0:
-        #     self.sess.run(self.target_replace_op)
-        #     print('\ntarget_params_replaced\n')
-
         # sample batch memory from all memory
         if self.memory_counter > self.memory_size:
             sample_index = np.random.choice(self.memory_size, size=self.batch_size)

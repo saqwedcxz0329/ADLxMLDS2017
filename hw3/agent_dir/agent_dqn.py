@@ -26,8 +26,8 @@ class Agent_DQN(Agent):
         self.reward_file_name = args.reward_file_name
         
         self.model = DeepQNetwork(n_actions, n_features,
-                      learning_rate=0.01,
-                      reward_decay=0.99,
+                      learning_rate=1e-4,
+                      gamma=0.99,
                       e_greedy=0.95,
                       replace_target_iter=1000,
                       memory_size=10000,
@@ -72,7 +72,7 @@ class Agent_DQN(Agent):
         total_episodes = 100000000
         start_learning_step = 10000
         online_net_update_freq = 4
-        traget_net_update_freq = 1000
+        target_net_update_freq = 1000
 
         step = 0
         avg_rs = np.zeros(100)
@@ -104,7 +104,7 @@ class Agent_DQN(Agent):
                 if (step > start_learning_step):
                     if (step % online_net_update_freq == 0):
                         self.model.train()
-                    if (step % traget_net_update_freq == 0):
+                    if (step % target_net_update_freq == 0):
                         self.model.update_target_net()
                 self.model.update_epsilon()
 
