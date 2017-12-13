@@ -85,39 +85,42 @@ class Agent_DQN(Agent):
             self.init_game_setting()
             done = False
             #playing one game
-            while(not done):
-                # RL choose action based on observation
-                actual_action, action = self.make_action(cur_obs, test=False)
+            try:
+                while(not done):
+                    # RL choose action based on observation
+                    actual_action, action = self.make_action(cur_obs, test=False)
 
-                # RL take action and get next observation and reward
-                next_obs, reward, done, info = self.env.step(actual_action)
+                    # RL take action and get next observation and reward
+                    next_obs, reward, done, info = self.env.step(actual_action)
 
-                cur_flat_obs = cur_obs.reshape(-1)
-                next_flat_obs = next_obs.reshape(-1)
-                eps_rs_list.append(reward)
-                self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs, done)
+                    cur_flat_obs = cur_obs.reshape(-1)
+                    next_flat_obs = next_obs.reshape(-1)
+                    eps_rs_list.append(reward)
+                    self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs, done)
 
-                # swap observation
-                cur_obs = next_obs
-                step += 1
+                    # swap observation
+                    cur_obs = next_obs
+                    step += 1
 
-                if (step > start_learning_step):
-                    if (step % online_net_update_freq == 0):
-                        self.model.train()
-                    if (step % target_net_update_freq == 0):
-                        self.model.update_target_net()
-                self.model.update_epsilon()
+                    if (step > start_learning_step):
+                        if (step % online_net_update_freq == 0):
+                            self.model.train()
+                        if (step % target_net_update_freq == 0):
+                            self.model.update_target_net()
+                    self.model.update_epsilon()
 
-            episode_reward = sum(eps_rs_list)
-            avg_rs[i%100] = episode_reward
-            eps_rs_list = []
-            print('Run %d episodes, reward: %d, avg_reward: %.3f, epsilon: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), self.model.epsilon, step))
-            with open(self.reward_file_name, 'a') as reward_file:
-                reward_file.write('{},{}\n'.format(i, episode_reward))
-            if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):
-                best_avg_rs = np.mean(avg_rs)
-                self.model.save(self.model_folder, self.store_model_name, i)
-
+                episode_reward = sum(eps_rs_list)
+                avg_rs[i%100] = episode_reward
+                eps_rs_list = []
+                print('Run %d episodes, reward: %d, avg_reward: %.3f, epsilon: %.3f, step: %d' % (i, episode_reward, np.mean(avg_rs), self.model.epsilon, step))
+                with open(self.reward_file_name, 'a') as reward_file:
+                    reward_file.write('{},{}\n'.format(i, episode_reward))
+                if(step > start_learning_step and np.mean(avg_rs) > best_avg_rs):
+                    best_avg_rs = np.mean(avg_rs)
+                    self.model.save(self.model_folder, self.store_model_name + '_best', i)
+            except KeyboardInterrupt:
+                self.model.save_interrupt(self.model_folder, self.store_model_name, i)
+                return
 
     def make_action(self, observation, test=True):
         """
