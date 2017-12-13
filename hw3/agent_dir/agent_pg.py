@@ -34,9 +34,9 @@ class Agent_PG(Agent):
         super(Agent_PG,self).__init__(env)
         
         n_features = 80 * 80 * 1
-        n_actions = 3  # stop:0 up:1 down:2
+        self.n_actions = 3  # stop:0 up:1 down:2
 
-        self.model = PolicyNetwork(n_actions,
+        self.model = PolicyNetwork(self.n_actions,
                                    n_features,
                                    learning_rate=0.0001,
                                    reward_decay=0.9)
@@ -132,7 +132,10 @@ class Agent_PG(Agent):
         self.prev_obs = observation
 
         gray_state = prepro(state).reshape(-1)
-        action = self.model.make_action(gray_state)
+        if np.random.uniform() < 0.9:
+            action = self.model.make_action(gray_state)
+        else:
+            action = np.random.randint(0, self.n_actions)
         actual_action = self._transfer_to_actual_action(action)
         if test:
             return actual_action
