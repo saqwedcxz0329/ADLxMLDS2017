@@ -178,8 +178,6 @@ class DeepQNetwork(object):
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
-            print(actions_value)
-            print(action)
         else:
             action = np.random.randint(0, self.n_actions)
         return action
