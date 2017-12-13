@@ -233,6 +233,10 @@ class DeepQNetwork(object):
 
     def save(self, model_path, model_name, episode):
         self.saver.save(self.sess, os.path.join(model_path, model_name), global_step=episode)
+    
+    def save_interrupt(self, model_path, model_name, episode):
+        saver = tf.train.Saver(max_to_keep=1)
+        saver.save(self.sess, os.path.join(model_path, model_name), global_step=episode)
 
     def restore(self, model_path, model_name):
         self.saver.restore(self.sess, os.path.join(model_path, model_name))
