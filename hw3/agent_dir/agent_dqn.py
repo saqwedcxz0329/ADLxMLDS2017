@@ -101,8 +101,8 @@ class Agent_DQN(Agent):
                 cur_obs = next_obs
                 step += 1
 
-                if (step > start_learning_step)
-                    if (step % learning_freq == 0):
+                if (step > start_learning_step):
+                    if (step % online_net_update_freq == 0):
                         self.model.train()
                     if (step % traget_net_update_freq == 0):
                         self.model.update_target_net()
