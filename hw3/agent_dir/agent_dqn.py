@@ -71,6 +71,9 @@ class Agent_DQN(Agent):
         ##################
         total_episodes = 100000000
         start_learning_step = 10000
+        online_net_update_freq = 4
+        traget_net_update_freq = 1000
+
         step = 0
         avg_rs = np.zeros(100)
         eps_rs_list = []
@@ -94,13 +97,16 @@ class Agent_DQN(Agent):
                 eps_rs_list.append(reward)
                 self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs, done)
 
-                if (step > start_learning_step) and (step % 4 == 0):
-                    self.model.train()
-                self.model.update_epsilon()
                 # swap observation
                 cur_obs = next_obs
-
                 step += 1
+
+                if (step > start_learning_step)
+                    if (step % learning_freq == 0):
+                        self.model.train()
+                    if (step % traget_net_update_freq == 0):
+                        self.model.update_target_net()
+                self.model.update_epsilon()
 
             episode_reward = sum(eps_rs_list)
             avg_rs[i%100] = episode_reward
