@@ -186,11 +186,16 @@ class DeepQNetwork(object):
         # increasing epsilon
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
 
+    def update_target_net(self):
+        self.sess.run(self.target_replace_op)
+        print('\ntarget_params_replaced\n')
+        
+
     def train(self):
         # check to replace target parameters
-        if self.learn_step_counter % self.replace_target_iter == 0:
-            self.sess.run(self.target_replace_op)
-            print('\ntarget_params_replaced\n')
+        # if self.learn_step_counter % self.replace_target_iter == 0:
+        #     self.sess.run(self.target_replace_op)
+        #     print('\ntarget_params_replaced\n')
 
         # sample batch memory from all memory
         if self.memory_counter > self.memory_size:
