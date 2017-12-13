@@ -87,7 +87,7 @@ class PolicyNetwork(object):
             loss = tf.reduce_mean(neg_log_prob * self.tf_vt)
 
         with tf.name_scope('train'):
-            self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(loss)
+            self.train_op = tf.train.RMSPropOptimizer(self.lr, decay=0.99).minimize(loss)
     
     def make_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={

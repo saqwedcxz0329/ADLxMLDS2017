@@ -38,7 +38,7 @@ class Agent_PG(Agent):
 
         self.model = PolicyNetwork(self.n_actions,
                                    n_features,
-                                   learning_rate=0.0001,
+                                   learning_rate=1e-4,
                                    reward_decay=0.9)
 
         self.model_folder = args.models_dir
