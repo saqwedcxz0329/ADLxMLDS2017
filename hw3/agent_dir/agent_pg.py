@@ -132,10 +132,11 @@ class Agent_PG(Agent):
         self.prev_obs = observation
 
         gray_state = prepro(state).reshape(-1)
-        if np.random.uniform() < 0.9:
+        if np.random.uniform() < 0.95:
             action = self.model.make_action(gray_state)
         else:
             action = np.random.randint(0, self.n_actions)
+        # action = self.model.make_action(gray_state)
         actual_action = self._transfer_to_actual_action(action)
         if test:
             return actual_action
