@@ -92,7 +92,7 @@ class Agent_DQN(Agent):
                 cur_flat_obs = cur_obs.reshape(-1)
                 next_flat_obs = next_obs.reshape(-1)
                 eps_rs_list.append(reward)
-                self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs)
+                self.model.store_transition(cur_flat_obs, action, reward, next_flat_obs, done)
 
                 if (step > start_learning_step) and (step % 4 == 0):
                     self.model.train()

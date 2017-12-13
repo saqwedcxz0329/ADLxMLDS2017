@@ -31,7 +31,7 @@ class DeepQNetwork(object):
         self.learn_step_counter = 0
 
         # initialize zero memory [s, a, r, s_]
-        self.memory = np.zeros((self.memory_size, n_features * 2 + 2))
+        self.memory = np.zeros((self.memory_size, n_features * 2 + 3))
 
         # consist of [target_net, evaluate_net]
         self._build_net()
@@ -55,6 +55,8 @@ class DeepQNetwork(object):
         self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')  # input Next State
         self.r = tf.placeholder(tf.float32, [None, ], name='r')  # input Reward
         self.a = tf.placeholder(tf.int32, [None, ], name='a')  # input Action
+        self.done = tf.placeholder(tf.float32, [None, ], name='done')  # is terminal
+        
 
         # w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
         n_neuron = 512
@@ -148,7 +150,7 @@ class DeepQNetwork(object):
                                 name='t2')
 
         with tf.variable_scope('q_target'):
-            q_target = self.r + self.gamma * tf.reduce_max(self.q_next, axis=1, name='Qmax_s_')    # shape=(None, )
+            q_target = self.r + (1. - self.done) * self.gamma * tf.reduce_max(self.q_next, axis=1, name='Qmax_s_')    # shape=(None, )
             self.q_target = tf.stop_gradient(q_target)
         with tf.variable_scope('q_eval'):
             a_indices = tf.stack([tf.range(tf.shape(self.a)[0], dtype=tf.int32), self.a], axis=1)
@@ -158,10 +160,11 @@ class DeepQNetwork(object):
         with tf.variable_scope('train'):
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
 
-    def store_transition(self, s, a, r, s_):
+    def store_transition(self, s, a, r, s_, done):
+        done = 1. if done else 0.
         if not hasattr(self, 'memory_counter'):
             self.memory_counter = 0
-        transition = np.hstack((s, [a, r], s_))
+        transition = np.hstack((s, [a, r, done], s_))
         # replace the old memory with new memory
         index = self.memory_counter % self.memory_size
         self.memory[index, :] = transition
@@ -175,7 +178,8 @@ class DeepQNetwork(object):
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
-            # print(actions_value)
+            print(actions_value)
+            print(action)
         else:
             action = np.random.randint(0, self.n_actions)
         return action
@@ -203,6 +207,7 @@ class DeepQNetwork(object):
                 self.s: batch_memory[:, :self.n_features],
                 self.a: batch_memory[:, self.n_features],
                 self.r: batch_memory[:, self.n_features + 1],
+                self.done: batch_memory[:, self.n_features + 2],
                 self.s_: batch_memory[:, -self.n_features:],
             })
 
