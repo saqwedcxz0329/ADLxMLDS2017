@@ -41,7 +41,7 @@ class Agent_DQN(Agent):
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
-            self.model.epsilon = 0.9
+            self.model.epsilon = 0.99
             self.model.restore(self.model_folder, self.trained_model_name)
 
         ##################
