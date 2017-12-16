@@ -34,7 +34,9 @@ class Agent_PG(Agent):
         super(Agent_PG,self).__init__(env)
         
         n_features = 80 * 80 * 1
-        self.n_actions = 3  # stop:0 up:1 down:2
+        
+        self.action_map = [0, 2, 3]
+        self.n_actions = len(self.action_map)  # stop:0 up:2 down:3
 
         self.model = PolicyNetwork(self.n_actions,
                                    n_features,
@@ -71,7 +73,7 @@ class Agent_PG(Agent):
         ##################
         self.prev_obs = None
 
-    def train(self, env):
+    def train(self):
         """
         Implement your training algorithm here
         """
@@ -79,21 +81,21 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         total_episodes = 100000
-        env.seed(seed)
+        self.env.seed(seed)
         
         avg_vt = np.zeros(30)
         
         best_avg_reward = -100
         counter = 0
         for i in range(total_episodes):
-            cur_obs = env.reset()
+            cur_obs = self.env.reset()
             self.init_game_setting()
             done = False
             #playing one game
             while(not done):
                 actual_action, action, gray_state = self.make_action(cur_obs, test=False)
                 
-                cur_obs, reward, done, info = env.step(actual_action)
+                cur_obs, reward, done, info = self.env.step(actual_action)
 
                 self.model.store_transition(gray_state, action, reward)
 
@@ -132,24 +134,9 @@ class Agent_PG(Agent):
         self.prev_obs = observation
 
         gray_state = prepro(state).reshape(-1)
-        if np.random.uniform() < 0.95:
-            action = self.model.make_action(gray_state)
-        else:
-            action = np.random.randint(0, self.n_actions)
-        # action = self.model.make_action(gray_state)
-        actual_action = self._transfer_to_actual_action(action)
+        action = self.model.make_action(gray_state)
+        actual_action = self.action_map[action]
         if test:
             return actual_action
         else:
             return actual_action, action, gray_state
-            
-    def _transfer_to_actual_action(self, action):
-        if action == 0:
-            actual_action = 0
-        elif action == 1:
-            actual_action = 2 # Up
-        elif action == 2:
-            actual_action = 3 # Down
-        else:
-            raise ValueError('Ivalid action!!')
-        return actual_action

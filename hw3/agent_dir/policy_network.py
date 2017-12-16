@@ -35,7 +35,6 @@ class PolicyNetwork(object):
             self.tf_vt = tf.placeholder(
                 tf.float32, [None, ], name="actions_value")
 
-        # input_layer = self.tf_obs
         input_layer = tf.reshape(self.tf_obs, [-1, 80, 80, 1])
         # Convolutional Layer #1
         conv1 = tf.layers.conv2d(
@@ -45,10 +44,6 @@ class PolicyNetwork(object):
             strides=4,
             padding="same",
             activation=tf.nn.relu)
-
-        # Pooling Layer #1
-        # pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
-
         # Convolutional Layer #2 and Pooling Layer #2
         conv2 = tf.layers.conv2d(
             inputs=conv1,
@@ -57,8 +52,6 @@ class PolicyNetwork(object):
             strides=2,
             padding="same",
             activation=tf.nn.relu)
-        # pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
-    
         # fc1
         pool2_flat = tf.contrib.layers.flatten(conv2)
         layer = tf.layers.dense(
@@ -87,7 +80,7 @@ class PolicyNetwork(object):
             loss = tf.reduce_mean(neg_log_prob * self.tf_vt)
 
         with tf.name_scope('train'):
-            self.train_op = tf.train.RMSPropOptimizer(self.lr, decay=0.99).minimize(loss)
+            self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(loss)
     
     def make_action(self, observation):
         prob_weights = self.sess.run(self.all_act_prob, feed_dict={

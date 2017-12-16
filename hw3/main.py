@@ -33,7 +33,7 @@ def run(args):
         env = Environment(env_name, args)
         from agent_dir.agent_pg import Agent_PG
         agent = Agent_PG(env, args)
-        agent.train(env)
+        agent.train()
 
     if args.train_dqn:
         env_name = args.env_name or 'BreakoutNoFrameskip-v4'
