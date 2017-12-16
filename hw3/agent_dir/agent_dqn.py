@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from agent_dir.agent import Agent
@@ -5,6 +7,11 @@ from environment import Environment
 from agent_dir.deep_q_network import DeepQNetwork
 
 seed = 11037
+
+def download_model(folder, model_name):
+    if not os.path.isfile(os.path.join(folder, model_name + '.index')):
+        os.system('wget https://www.dropbox.com/s/6q23g5j4ubq9n5a/dqn.zip?dl=1')
+        os.system('unzip dqn.zip?dl=1 -d %s' %folder)
 
 class Agent_DQN(Agent):
     def __init__(self, env, args):
@@ -40,6 +47,7 @@ class Agent_DQN(Agent):
 
         if args.test_dqn:
             #you can load your model here
+            download_model(self.model_folder, self.trained_model_name)
             print('loading trained model')
             self.model.epsilon = 0.99
             self.model.restore(self.model_folder, self.trained_model_name)
