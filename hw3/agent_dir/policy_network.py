@@ -16,7 +16,8 @@ class PolicyNetwork(object):
 
         # to memory this episode states
         self.ep_obs, self.ep_as, self.ep_rs = [], [], []
-
+        
+        tf.reset_default_graph()
         self._build_net()
         
         config = tf.ConfigProto()
