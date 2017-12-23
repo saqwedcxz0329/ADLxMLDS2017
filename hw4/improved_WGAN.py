@@ -171,8 +171,9 @@ class Improved_WGAN(object):
 			self.z:z
 		}
 
-		f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
+		for i in range(5):
+			f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
 
-		data_utils.dump_img(self.FLAGS.img_dir, f_imgs, iters)
+			data_utils.dump_img(self.FLAGS.img_dir, f_imgs, iters, i)
 
 

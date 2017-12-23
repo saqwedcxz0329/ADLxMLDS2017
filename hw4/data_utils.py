@@ -320,7 +320,7 @@ def load_test(test_path, vocab_processor):
 
 	return  tags_idx
 
-def dump_img(img_dir, img_feats, iters):
+def dump_img(img_dir, img_feats, iters, sample_id):
 	if not os.path.exists(img_dir):
 		os.makedirs(img_dir)
 	
@@ -328,7 +328,7 @@ def dump_img(img_dir, img_feats, iters):
 	img_feats = np.array(img_feats, dtype=np.uint8)
 
 	for idx, img_feat in enumerate(img_feats):
-		path = os.path.join(img_dir, 'iters_{}_test_{}.jpg'.format(iters, idx))
+		path = os.path.join(img_dir, 'iters_{}_test_{}_{}.jpg'.format(iters, idx, sample_id))
 		misc.imsave(path, img_feat)
 
 
