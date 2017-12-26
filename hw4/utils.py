@@ -1,6 +1,9 @@
 import csv
 import os
 
+import skimage
+import skimage.io
+import skimage.transform
 from scipy import misc
 import numpy as np
 import scipy.stats as stats
@@ -140,8 +143,8 @@ def load_train_data(train_dir, tag_path):
                 
                 row_idx = row[0]
                 img_path = os.path.join(train_dir,'{}.jpg'.format(row_idx))
-                img = misc.imread(img_path)
-                img = misc.imresize(img, (64, 64))
+                img = skimage.io.imread(img_path)
+                img = skimage.transform.resize(img, (64, 64))
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
@@ -150,11 +153,11 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
 
-                img_p5 = misc.imrotate(img, 5)
+                img_p5 = skimage.transform.rotate(img, 5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_p5)
 
-                img_n5 = misc.imrotate(img, -5)
+                img_n5 = skimage.transform.rotate(img, -5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_n5)
 
