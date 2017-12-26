@@ -176,7 +176,7 @@ def load_test(test_path):
             test_tag_feat.append([text_content[EYES], text_content[HAIR]])
     return  test_tag_feat
 
-def dump_img(img_dir, img_feats, iters, sample_id):
+def dump_img(img_dir, img_feats, iters):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
@@ -184,5 +184,5 @@ def dump_img(img_dir, img_feats, iters, sample_id):
     img_feats = np.array(img_feats, dtype=np.uint8)
 
     for idx, img_feat in enumerate(img_feats):
-        path = os.path.join(img_dir, 'iters_{}_sample_{}_{}.jpg'.format(iters, idx, sample_id))
+        path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
         misc.imsave(path, img_feat)
