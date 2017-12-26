@@ -8,14 +8,12 @@ import progressbar as pb
 import data_utils
 
 class Improved_WGAN(object):
-	def __init__(self, data, vocab_processor, FLAGS):
+	def __init__(self, data, FLAGS):
 		config = tf.ConfigProto(allow_soft_placement = True)
 		config.gpu_options.per_process_gpu_memory_fraction = 0.5
 		config.gpu_options.allow_growth = True
 		self.sess = tf.Session(config = config)
 		self.data = data
-		self.vocab_processor = vocab_processor
-		self.vocab_size = len(vocab_processor._reverse_mapping)
 		self.FLAGS = FLAGS
 		self.img_row = self.data.img_feat.shape[1]
 		self.img_col = self.data.img_feat.shape[2]
@@ -28,7 +26,7 @@ class Improved_WGAN(object):
 		timestamp = str(time.strftime('%b-%d-%Y-%H-%M-%S'))
 		self.out_dir = os.path.abspath(os.path.join(os.path.curdir, "models", timestamp))
 		print ("Writing to {}\n".format(self.out_dir))
-	    # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
+		# Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
 		self.checkpoint_dir = os.path.abspath(os.path.join(self.out_dir, "checkpoints"))
 		self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "model")
 		if not os.path.exists(self.checkpoint_dir):
@@ -36,26 +34,14 @@ class Improved_WGAN(object):
 
 	def build_model(self):
 
-		self.g_net = Generator( 
-						max_seq_length=self.data.tags_idx.shape[1], 
-						vocab_size=self.vocab_size, 
-						embedding_size=self.FLAGS.embedding_dim, 
-						hidden_size=self.FLAGS.hidden,
-						img_row=self.img_row,
-						img_col=self.img_col)
-		self.d_net = Discriminator( 
-						max_seq_length=self.data.tags_idx.shape[1], 
-						vocab_size=self.vocab_size, 
-						embedding_size=self.FLAGS.embedding_dim, 
-						hidden_size=self.FLAGS.hidden,
-						img_row=self.img_row,
-						img_col=self.img_col)
+		self.g_net = Generator()
+		self.d_net = Discriminator()
 
-		self.seq = tf.placeholder(tf.float32, [None, len(self.data.eyes_idx)+len(self.data.hair_idx)], name="seq")
+		self.seq = tf.placeholder(tf.float32, [None, len(self.data.eyes_color)+len(self.data.hair_color)], name="seq")
 		self.img = tf.placeholder(tf.float32, [None, self.img_row, self.img_col, 3], name="img")
 		self.z = tf.placeholder(tf.float32, [None, self.FLAGS.z_dim])
 
-		self.w_seq = tf.placeholder(tf.float32, [None, len(self.data.eyes_idx)+len(self.data.hair_idx)], name="w_seq")
+		self.w_seq = tf.placeholder(tf.float32, [None, len(self.data.eyes_color)+len(self.data.hair_color)], name="w_seq")
 		self.w_img = tf.placeholder(tf.float32, [None, self.img_row, self.img_col, 3], name="w_img")
 
 		r_img, r_seq = self.img, self.seq
@@ -73,7 +59,7 @@ class Improved_WGAN(object):
 		"""
 		self.d = self.d_net(r_seq, r_img, reuse=False) 	# r img, r text
 		self.d_1 = self.d_net(r_seq, self.f_img) 		# f img, r text
-		self.d_2 = self.d_net(self.w_seq, self.img)		# r img, w text
+		self.d_2 = self.d_net(self.w_seq, r_img)		# r img, w text
 		self.d_3 = self.d_net(r_seq, self.w_img)		# w img, r text
 
 		# epsilon = tf.random_uniform([], 0.0, 1.0)
@@ -94,8 +80,8 @@ class Improved_WGAN(object):
 
 		self.d_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d, labels=tf.ones_like(self.d))) \
 					+ (tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_1, labels=tf.zeros_like(self.d_1))) + \
-					   tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_2, labels=tf.zeros_like(self.d_2))) +\
-					   tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_3, labels=tf.zeros_like(self.d_3))) ) / 3 
+						tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_2, labels=tf.zeros_like(self.d_2))) +\
+						tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_3, labels=tf.zeros_like(self.d_3))) ) / 3 
 		
 
 		self.global_step = tf.Variable(0, name='g_global_step', trainable=False)
@@ -108,8 +94,6 @@ class Improved_WGAN(object):
 		self.saver = tf.train.Saver(tf.global_variables())
 
 	def train(self):
-		batch_num = self.data.length//self.FLAGS.batch_size if self.data.length%self.FLAGS.batch_size==0 else self.data.length//self.FLAGS.batch_size + 1
-
 		print("Start training WGAN...\n")
 
 		for t in range(self.FLAGS.iter):
@@ -119,7 +103,7 @@ class Improved_WGAN(object):
 
 			for d_ep in range(self.d_epoch):
 
-				img, tags, _, w_img, w_tags = self.data.next_data_batch(self.FLAGS.batch_size)
+				img, tags, w_img, w_tags = self.data.next_data_batch(self.FLAGS.batch_size)
 				z = self.data.next_noise_batch(len(tags), self.FLAGS.z_dim)
 
 				feed_dict = {
@@ -130,7 +114,7 @@ class Improved_WGAN(object):
 					self.w_img:w_img
 				}
 
-				_, loss = self.sess.run([self.d_updates, self.d_loss], feed_dict=feed_dict)
+				_, loss, img = self.sess.run([self.d_updates, self.d_loss, self.f_img], feed_dict=feed_dict)
 
 				d_cost += loss/self.d_epoch
 
@@ -144,6 +128,7 @@ class Improved_WGAN(object):
 			}
 
 			_, loss, step = self.sess.run([self.g_updates, self.g_loss, self.global_step], feed_dict=feed_dict)
+
 
 			current_step = tf.train.global_step(self.sess, self.global_step)
 
@@ -167,7 +152,7 @@ class Improved_WGAN(object):
 		
 		z = self.data.fixed_z
 		feed_dict = {
-			self.seq:self.data.test_tags_idx,
+			self.seq:self.data.test_tag_one_hot,
 			self.z:z
 		}
 

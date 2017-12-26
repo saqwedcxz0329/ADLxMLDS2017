@@ -3,23 +3,11 @@ import tensorflow.contrib as tc
 import math
 
 def leaky_relu(x, alpha=0.2):
-    return tf.maximum(tf.minimum(0.0, alpha * x), x)
+	return tf.maximum(tf.minimum(0.0, alpha * x), x)
 
 class Generator(object):
-	def __init__(self, 
-		max_seq_length, 
-		vocab_size, 
-		embedding_size, 
-		hidden_size, 
-		img_row, 
-		img_col):
-
-		self.max_seq_length = max_seq_length
-		self.vocab_size = vocab_size
-		self.embedding_size = embedding_size
-		self.hidden_size = hidden_size
-		self.img_row = img_row
-		self.img_col = img_col
+	def __init__(self):
+		pass
 		
 	def __call__(self, seq_idx, z, reuse=False, train=True):
 
@@ -60,7 +48,7 @@ class Generator(object):
 				)
 			conv2 = tf.layers.batch_normalization(conv2, training=train)
 			conv2 = tf.nn.relu(conv2)
-
+			
 			conv3 = tc.layers.convolution2d_transpose(
 				conv2, 32, [5, 5], [2, 2],
 				padding='same',
@@ -77,7 +65,7 @@ class Generator(object):
 				activation_fn=None
 				)
 			conv4 = tf.nn.tanh(conv4)
-
+			
 			return conv4
 
 	@property
@@ -85,20 +73,8 @@ class Generator(object):
 		return [var for var in tf.global_variables() if "g_net" in var.name]
 
 class Discriminator(object):
-	def __init__(self, 
-		max_seq_length, 
-		vocab_size, 
-		embedding_size, 
-		hidden_size,
-		img_row,
-		img_col):
-
-		self.max_seq_length = max_seq_length
-		self.vocab_size = vocab_size
-		self.embedding_size = embedding_size
-		self.hidden_size = hidden_size
-		self.img_row = img_row
-		self.img_col = img_col
+	def __init__(self):
+		pass
 		
 	def __call__(self, seq_idx, img, reuse=True):
 
