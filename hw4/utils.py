@@ -150,11 +150,11 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
 
-                img_p5 = misc.imrotate(feat, 5)
+                img_p5 = misc.imrotate(img, 5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_p5)
 
-                img_n5 = misc.imrotate(feat, -5)
+                img_n5 = misc.imrotate(img, -5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_n5)
 
