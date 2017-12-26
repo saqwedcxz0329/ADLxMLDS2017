@@ -1,11 +1,10 @@
 import csv
 import os
 
-import skimage
-import skimage.io
-import skimage.transform
+from scipy import misc
 import numpy as np
 import scipy.stats as stats
+
 
 UNK = '<unk>'
 HAIR = 'hair'
@@ -138,13 +137,26 @@ def load_train_data(train_dir, tag_path):
                 # eyes_idx = eyes_color[text_content[EYES]]
                 # hair_idx = hair_color[text_content[HAIR]]
                 # tag_feat.append([eyes_idx, hair_idx])
-                tag_feat.append([text_content[EYES], text_content[HAIR]])
                 
                 row_idx = row[0]
                 img_path = os.path.join(train_dir,'{}.jpg'.format(row_idx))
-                img = skimage.io.imread(img_path)
-                img = skimage.transform.resize(img, (64, 64))
+                img = misc.imread(img_path)
+                img = misc.imresize(img, (64, 64))
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
+
+
+                m_img = np.fliplr(img)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(m_img)
+
+                img_p5 = misc.imrotate(feat, 5)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(img_p5)
+
+                img_n5 = misc.imrotate(feat, -5)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(img_n5)
 
     return np.array(img_feat), tag_feat
 

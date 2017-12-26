@@ -5,7 +5,7 @@ import time
 import os
 from model import Generator, Discriminator
 import progressbar as pb
-import data_utils
+import utils
 
 class Improved_WGAN(object):
 	def __init__(self, data, FLAGS):
@@ -129,7 +129,6 @@ class Improved_WGAN(object):
 
 			_, loss, step = self.sess.run([self.g_updates, self.g_loss, self.global_step], feed_dict=feed_dict)
 
-
 			current_step = tf.train.global_step(self.sess, self.global_step)
 
 			g_cost = loss
@@ -156,9 +155,8 @@ class Improved_WGAN(object):
 			self.z:z
 		}
 
-		for i in range(5):
-			f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
+		f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
 
-			data_utils.dump_img(self.FLAGS.img_dir, f_imgs, iters, i)
+		utils.dump_img(self.FLAGS.img_dir, f_imgs, iters)
 
 
