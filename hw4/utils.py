@@ -148,7 +148,6 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
-
                 m_img = np.fliplr(img)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
@@ -183,7 +182,7 @@ def dump_img(img_dir, img_feats, iters):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
-    img_feats = (img_feats + 1.)/2 * 255.
+    img_feats = (img_feats + 1.) * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
 
     for idx, img_feat in enumerate(img_feats):
