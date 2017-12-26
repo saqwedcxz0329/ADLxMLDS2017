@@ -152,13 +152,13 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
 
-                img_p5 = skimage.transform.rotate(img, 5)
-                tag_feat.append([text_content[EYES], text_content[HAIR]])
-                img_feat.append(img_p5)
+                # img_p5 = skimage.transform.rotate(img, 5)
+                # tag_feat.append([text_content[EYES], text_content[HAIR]])
+                # img_feat.append(img_p5)
 
-                img_n5 = skimage.transform.rotate(img, -5)
-                tag_feat.append([text_content[EYES], text_content[HAIR]])
-                img_feat.append(img_n5)
+                # img_n5 = skimage.transform.rotate(img, -5)
+                # tag_feat.append([text_content[EYES], text_content[HAIR]])
+                # img_feat.append(img_n5)
 
     return np.array(img_feat), tag_feat
 
@@ -182,7 +182,7 @@ def dump_img(img_dir, img_feats, iters):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
-    img_feats = (img_feats + 1.) * 255.
+    img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
 
     for idx, img_feat in enumerate(img_feats):
