@@ -29,8 +29,6 @@ def main():
     img_feat, tag_feat = utils.load_train_data(FLAGS.train_dir, FLAGS.tag_path)
     test_tag_feat = utils.load_test(FLAGS.test_path)
 
-    img_feat = np.array(img_feat, dtype='float32') - 1.
-
     data = Data(img_feat, tag_feat, test_tag_feat, FLAGS.z_dim)
 
     model = Improved_WGAN(data, FLAGS)
