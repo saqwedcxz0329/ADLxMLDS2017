@@ -114,7 +114,7 @@ class Improved_WGAN(object):
 					self.w_img:w_img
 				}
 
-				_, loss, img = self.sess.run([self.d_updates, self.d_loss, self.f_img], feed_dict=feed_dict)
+				_, loss = self.sess.run([self.d_updates, self.d_loss], feed_dict=feed_dict)
 
 				d_cost += loss/self.d_epoch
 
