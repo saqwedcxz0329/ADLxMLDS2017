@@ -23,12 +23,12 @@ class Generator(object):
 			noise_vector = tf.concat([tags_vectors, z], axis=1)
 
 			fc2 = tc.layers.fully_connected(
-				noise_vector, 4*4*256,
+				noise_vector, 6*6*256,
 				weights_initializer=tf.random_normal_initializer(stddev=0.02),
 				activation_fn=None
 				)
 			fc2 = tf.layers.batch_normalization(fc2, training=train)
-			fc2 = tf.reshape(fc2, [-1, 4, 4, 256])
+			fc2 = tf.reshape(fc2, [-1, 6, 6, 256])
 			fc2 = tf.nn.relu(fc2)
 
 			conv1 = tc.layers.convolution2d_transpose(
@@ -115,7 +115,7 @@ class Discriminator(object):
 			conv3 = leaky_relu(conv3)
 
 			tags_vectors = tf.expand_dims(tf.expand_dims(tags_vectors, 1), 2)
-			tags_vectors = tf.tile(tags_vectors, [1, 8, 8, 1])
+			tags_vectors = tf.tile(tags_vectors, [1, 12, 12, 1])
 
 			condition_info = tf.concat([conv3, tags_vectors], axis=-1)
 
@@ -129,7 +129,7 @@ class Discriminator(object):
 			conv4 = leaky_relu(conv4)
 
 			conv5 = tc.layers.convolution2d(
-				conv4, 1, [8, 8], [1, 1],
+				conv4, 1, [12, 12], [1, 1],
 				padding='valid',
 				weights_initializer=tf.random_normal_initializer(stddev=0.02),
 				activation_fn=None

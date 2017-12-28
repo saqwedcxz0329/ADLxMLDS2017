@@ -187,6 +187,8 @@ def dump_img(img_dir, img_feats, iters):
     img_feats = np.array(img_feats, dtype=np.uint8)
     img_feats = misc.imresize(img_feats, [64, 64, 3])
 
-    for idx, img_feat in enumerate(img_feats):
-        path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
-        misc.imsave(path, img_feat)
+    path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
+    misc.imsave(path, img_feats)
+    # for idx, img_feat in enumerate(img_feats):
+    #     path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
+    #     misc.imsave(path, img_feat)
