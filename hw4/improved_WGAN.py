@@ -4,7 +4,6 @@ import numpy as np
 import time
 import os
 from model import Generator, Discriminator
-import progressbar as pb
 import utils
 
 class Improved_WGAN(object):
