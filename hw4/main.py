@@ -15,7 +15,7 @@ tf.flags.DEFINE_integer("display_every", 20, "predict model on dev set after thi
 tf.flags.DEFINE_integer("dump_every", 500, "predict model on dev set after this many steps (default: 500)")
 tf.flags.DEFINE_integer("checkpoint_every", 500, "Save model after this many steps (default: 500)")
 
-tf.flags.DEFINE_float("lr", 2e-4, "training learning rate")
+tf.flags.DEFINE_float("lr", 0.0002, "training learning rate")
 
 tf.flags.DEFINE_string("img_dir", "./samples/", "test image directory")
 tf.flags.DEFINE_string("train_dir", "./data/faces", "training data directory")

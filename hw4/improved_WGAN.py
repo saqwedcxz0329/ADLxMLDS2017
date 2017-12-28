@@ -87,8 +87,8 @@ class Improved_WGAN(object):
 		self.global_step = tf.Variable(0, name='g_global_step', trainable=False)
 
 		with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-			self.d_updates = tf.train.AdamOptimizer(self.FLAGS.lr, beta1=0.5, beta2=0.9).minimize(self.d_loss, var_list=self.d_net.vars)
-			self.g_updates = tf.train.AdamOptimizer(self.FLAGS.lr, beta1=0.5, beta2=0.9).minimize(self.g_loss, var_list=self.g_net.vars, global_step=self.global_step)
+			self.d_updates = tf.train.AdamOptimizer(self.FLAGS.lr, beta1=0.5).minimize(self.d_loss, var_list=self.d_net.vars)
+			self.g_updates = tf.train.AdamOptimizer(self.FLAGS.lr, beta1=0.5).minimize(self.g_loss, var_list=self.g_net.vars, global_step=self.global_step)
 
 		self.sess.run(tf.global_variables_initializer())
 		self.saver = tf.train.Saver(tf.global_variables())
