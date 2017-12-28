@@ -113,7 +113,7 @@ class Data(object):
         return img, tag_one, self.img_feat[widx], self.tag_one_hot[widx]
 
     def next_noise_batch(self, size, dim):
-        return self.z_sampler.rvs([size, dim]) #np.random.uniform(-1.0, 1.0, [size, dim])
+        return np.random.uniform(-1.0, 1.0, [size, dim])
 
 def load_train_data(train_dir, tag_path):
     tag_feat = []
@@ -148,18 +148,18 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
-                # m_img = np.fliplr(img)
-                # tag_feat.append([text_content[EYES], text_content[HAIR]])
-                # img_feat.append(m_img)
+                m_img = np.fliplr(img)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(m_img)
 
-                # img_p5 = skimage.transform.rotate(img, 5)
-                # tag_feat.append([text_content[EYES], text_content[HAIR]])
-                # img_feat.append(img_p5)
+                img_p5 = misc.imrotate(img, 5)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(img_p5)
 
-                # img_n5 = skimage.transform.rotate(img, -5)
-                # tag_feat.append([text_content[EYES], text_content[HAIR]])
-                # img_feat.append(img_n5)
-    img_feat = np.array(img_feat)
+                img_n5 = misc.imrotate(img, -5)
+                tag_feat.append([text_content[EYES], text_content[HAIR]])
+                img_feat.append(img_n5)
+                
     img_feat = np.array(img_feat, dtype='float32')/127.5 - 1.
     return img_feat, tag_feat
 
@@ -185,10 +185,18 @@ def dump_img(img_dir, img_feats, iters):
 
     img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
-    img_feats = misc.imresize(img_feats, [64, 64, 3])
-
+    
+    resize_img_feats = []
+    for img in img_feats:
+        img = misc.imresize(img, [64, 64, 3])
+        resize_img_feats.append(img)
+    
+    final_img = None
     path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
-    misc.imsave(path, img_feats)
-    # for idx, img_feat in enumerate(img_feats):
-    #     path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
-    #     misc.imsave(path, img_feat)
+    for img in resize_img_feats:
+        if final_img is None:
+            final_img = img
+        else:
+            final_img = np.concatenate((final_img, img), axis=0)
+
+    misc.imsave(path, final_img)
