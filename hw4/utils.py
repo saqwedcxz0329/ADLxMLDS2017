@@ -53,8 +53,6 @@ class Data(object):
         self.test_tag_one_hot = self.gen_test_hot(test_tag_feat)
         self.fixed_z = self.next_noise_batch(len(self.test_tag_one_hot), z_dim)
 
-        np.random.seed(0)
-
     def gen_test_hot(self, test_intput):
         test_hot = []
         for tags in test_intput:
@@ -192,7 +190,7 @@ def dump_img(img_dir, img_feats, iters):
     final_img = None
     path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
     for img in img_feats:
-        if final_img == None:
+        if final_img is None:
             final_img = img
         else:
             final_img = np.concatenate((final_img, img), axis=0)
