@@ -13,14 +13,6 @@ UNK = '<unk>'
 HAIR = 'hair'
 EYES = 'eyes'
 
-# hair_color = {UNK:0, 'orange':1, 'white':2, 'aqua':3, 'gray':4,
-#     'green':5, 'red':6, 'purple':7, 'pink':8,
-#     'blue':9, 'black':10, 'brown':11, 'blonde':12}
-
-# eyes_color = {UNK:0, 'gray':1, 'black':2, 'orange':3,
-#     'pink':4, 'yellow':5, 'aqua':6, 'purple':7,
-#     'green':8, 'brown':9, 'red':10, 'blue':11}
-
 hair_color = [UNK, 'orange', 'white', 'aqua', 'gray',
 'green', 'red', 'purple', 'pink',
 'blue', 'black', 'brown', 'blonde']
@@ -113,7 +105,7 @@ class Data(object):
         return img, tag_one, self.img_feat[widx], self.tag_one_hot[widx]
 
     def next_noise_batch(self, size, dim):
-        return np.random.uniform(-1.0, 1.0, [size, dim])
+        return np.random.normal(0.0, 1.0, [size, dim])
 
 def load_train_data(train_dir, tag_path):
     tag_feat = []
@@ -137,10 +129,7 @@ def load_train_data(train_dir, tag_path):
                             text_content[EYES] = color
             
             if text_content[HAIR] != UNK or text_content[EYES] != UNK:
-                # eyes_idx = eyes_color[text_content[EYES]]
-                # hair_idx = hair_color[text_content[HAIR]]
-                # tag_feat.append([eyes_idx, hair_idx])
-                
+
                 row_idx = row[0]
                 img_path = os.path.join(train_dir,'{}.jpg'.format(row_idx))
                 img = misc.imread(img_path)
@@ -187,17 +176,28 @@ def dump_img(img_dir, img_feats, iters):
     img_feats = np.array(img_feats, dtype=np.uint8)
     #img_feats = misc.imresize(img_feats, [64, 64, 3])
     
-    final_img = None
     path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
-    for img in img_feats:
+    
+    img_feats = img_feats[:9]
+    row = 3
+    col = 3
+    final_img = None
+    for i in range(row):
+        row_img = None
+        for j in range(col):
+            idx = i * row + j
+            img = img_feats[idx]
+            if row_img is None:
+                row_img = img
+            else:
+                row_img = np.concatenate((row_img, img), axis=1)
         if final_img is None:
-            final_img = img
+            final_img = row_img
         else:
-            final_img = np.concatenate((final_img, img), axis=0)
+            final_img = np.concatenate((final_img, row_img), axis=0)
 
     misc.imsave(path, final_img)
     
-
     # for idx, img_feat in enumerate(img_feats):
     #     path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
     #     misc.imsave(path, img_feat)
