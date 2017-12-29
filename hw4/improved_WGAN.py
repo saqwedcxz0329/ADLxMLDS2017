@@ -90,7 +90,7 @@ class Improved_WGAN(object):
 			self.g_updates = tf.train.AdamOptimizer(self.FLAGS.lr, beta1=0.5).minimize(self.g_loss, var_list=self.g_net.vars, global_step=self.global_step)
 
 		self.sess.run(tf.global_variables_initializer())
-		self.saver = tf.train.Saver(tf.global_variables())
+		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
 
 	def train(self):
 		print("Start training WGAN...\n")
