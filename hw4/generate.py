@@ -18,13 +18,14 @@ tf.flags.DEFINE_float("lr", 0.0002, "training learning rate")
 tf.flags.DEFINE_string("img_dir", "./samples/", "test image directory")
 tf.flags.DEFINE_string("train_dir", "./data/faces", "training data directory")
 tf.flags.DEFINE_string("tag_path", "./data/tags_clean.csv", "training data tags")
-tf.flags.DEFINE_string("test_path", "./data/sample_testing_text.txt", "sample test format")
+tf.flags.DEFINE_string("test_path", "./data/testing_text.txt", "sample test format")
+
+tf.flags.DEFINE_integer("model_path", "./models", "model folder")
+tf.flags.DEFINE_integer("model_name", "model", "model name")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-model_path = './models'
-model_name = 'model-30000'
 
 def generate():
     img_feat, tag_feat = None, None
@@ -36,10 +37,12 @@ def generate():
 
     model.build_model()
 
-    model.restore(model_path, model_name)
+    for i in range(500, 50500, 500):
+        checkpoint_prefix = '{}-{}'.format(FLAG.model_name, i)
 
-    model.eval('no_rotate')
+        model.restore(FLAG.model_path, checkpoint_prefix)
 
+        model.gen_test_img(i)
 
 if __name__ == '__main__':
     generate()
