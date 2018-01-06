@@ -14,8 +14,8 @@ class Improved_WGAN(object):
 		self.sess = tf.Session(config = config)
 		self.data = data
 		self.FLAGS = FLAGS
-		self.img_row = self.data.img_feat.shape[1] if self.data.img_feat is not None else 64
-		self.img_col = self.data.img_feat.shape[2] if self.data.img_feat is not None else 64
+		self.img_row = self.data.img_feat.shape[1] if self.data.img_feat is not None else 96
+		self.img_col = self.data.img_feat.shape[2] if self.data.img_feat is not None else 96
 		self.alpha = 10.
 		self.d_epoch = 1
 		self.gen_path()
