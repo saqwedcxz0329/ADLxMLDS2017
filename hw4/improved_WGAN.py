@@ -161,12 +161,25 @@ class Improved_WGAN(object):
 	def restore(self, model_path, model_name):
 		self.saver.restore(self.sess, os.path.join(model_path, model_name))
 
-	def gen_img(self):
-		
+	def gen_test_img(self, name):
+
+		size = len(self.data.test_tag_one_hot)
+		z_dim = self.FLAGS.z_dim
 		np.random.seed(0)
-		z = None
-		feed_dict = {
-			self.seq:self.data.test_tag_one_hot,
-			self.z:z
-		}
-		f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
+
+		img_feats = []
+
+		for _ in range(5):
+			z = np.random.normal(0.0, 1.0, [size, z_dim])
+
+			feed_dict = {
+				self.seq:self.data.test_tag_one_hot,
+				self.z:z
+			}
+
+			f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)
+			img_feats.append(f_imgs)
+		
+		img_feats = np.array(img_feats)
+
+		utils.dump_test_img(self.FLAGS.img_dir, img_feats, name)
