@@ -23,6 +23,9 @@ eyes_color = [UNK, 'gray', 'black', 'orange',
 
 class Data(object):
     def __init__(self, img_feat, tag_feat, test_tag_feat, z_dim):
+        self.eyes_color = eyes_color
+        self.hair_color = hair_color
+
         # train data
         self.img_feat = img_feat
         self.tag_feat = tag_feat
@@ -31,9 +34,6 @@ class Data(object):
             self.wrong_idx = np.random.permutation(np.arange(self.data_size))
             self.tag_one_hot = []
             self.gen_info()
-
-        self.eyes_color = eyes_color
-        self.hair_color = hair_color
 
         # noise
         self.z_sampler = stats.truncnorm((-1 - 0.) / 1., (1 - 0.) / 1., loc=0., scale=1)
