@@ -16,7 +16,6 @@ class GAN(object):
 		self.FLAGS = FLAGS
 		self.img_row = self.data.img_feat.shape[1] if self.data.img_feat is not None else 96
 		self.img_col = self.data.img_feat.shape[2] if self.data.img_feat is not None else 96
-		self.alpha = 10.
 		self.d_epoch = 1
 
 	def gen_path(self):
@@ -59,19 +58,6 @@ class GAN(object):
 		self.d_1 = self.d_net(r_seq, self.f_img) 		# f img, r text
 		self.d_2 = self.d_net(self.w_seq, r_img)		# r img, w text
 		self.d_3 = self.d_net(r_seq, self.w_img)		# w img, r text
-
-		# epsilon = tf.random_uniform([], 0.0, 1.0)
-		# img_hat = epsilon * r_img + (1 - epsilon) * self.f_img
-		# d_hat = self.d_net(r_seq, img_hat)
-
-		# ddx = tf.gradients(d_hat, img_hat)[0]
-		# ddx = tf.reshape(ddx, [-1, self.img_row * self.img_col * 3])
-		# ddx = tf.sqrt(tf.reduce_sum(tf.square(ddx), axis=1))
-		# ddx = tf.reduce_mean(tf.square(ddx - 1.0) * self.alpha)
-		
-		# self.g_loss = -tf.reduce_mean(self.d_1)
-		# self.d_loss = tf.reduce_mean(self.d) - (tf.reduce_mean(self.d_1)+tf.reduce_mean(self.d_2)+tf.reduce_mean(self.d_3))/3.
-		# self.d_loss = -(self.d_loss - ddx)
 
 		# dcgan
 		self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.d_1, labels=tf.ones_like(self.d_1))) 

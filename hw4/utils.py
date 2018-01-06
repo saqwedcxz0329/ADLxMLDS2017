@@ -1,13 +1,8 @@
 import csv
 import os
 
-import skimage
-import skimage.io
-import skimage.transform
 from scipy import misc
 import numpy as np
-import scipy.stats as stats
-
 
 UNK = '<unk>'
 HAIR = 'hair'
@@ -34,9 +29,6 @@ class Data(object):
             self.wrong_idx = np.random.permutation(np.arange(self.data_size))
             self.tag_one_hot = []
             self.gen_info()
-
-        # noise
-        self.z_sampler = stats.truncnorm((-1 - 0.) / 1., (1 - 0.) / 1., loc=0., scale=1)
 
         # batch control
         self.current = 0
