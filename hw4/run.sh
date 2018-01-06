@@ -1,0 +1,1 @@
+python generate.py --test_path $1
