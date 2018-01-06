@@ -193,9 +193,22 @@ def dump_img(img_dir, img_feats, iters):
 
     misc.imsave(path, final_img)
     
-    # for idx, img_feat in enumerate(img_feats):
-    #     path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
-    #     misc.imsave(path, img_feat)
+def dump_test_img(img_dir, img_feats, name):
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
 
-def dump_test_img():
-    pass
+    img_feats = (img_feats + 1.)/2 * 255.
+    img_feats = np.array(img_feats, dtype=np.uint8)
+    #img_feats = misc.imresize(img_feats, [64, 64, 3])
+    
+    path = os.path.join(img_dir, '{}_sample.jpg'.format(name))
+
+    final_img = None
+    for i in range(img_feats.shape[0]):
+        col_img = None
+        for img in img_feats[i]:
+            col_img = img if col_img is None else np.concatenate((col_img, img), axis=0)
+        
+        final_img = col_img if final_img is None else np.concatenate((final_img, col_img), axis=1)
+    
+    misc.imsave(path, final_img)
