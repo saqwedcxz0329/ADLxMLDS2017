@@ -192,29 +192,41 @@ def dump_img(img_dir, img_feats, iters):
             final_img = np.concatenate((final_img, row_img), axis=0)
 
     misc.imsave(path, final_img)
-    
-def dump_test_img(img_dir, img_feats, name):
+
+def dump_test_img(img_dir, img_feats, sample_id):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
     img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
-    resize_img_feats = []
-    for i in range(img_feats.shape[0]):
-        col_img = []
-        for img in img_feats[i]:
-            col_img.append(misc.imresize(img, [64, 64, 3]))
-        resize_img_feats.append(col_img)
-    resize_img_feats = np.array(resize_img_feats, dtype=np.uint8)
-    
-    path = os.path.join(img_dir, '{}_sample.jpg'.format(name))
 
-    final_img = None
-    for i in range(resize_img_feats.shape[0]):
-        col_img = None
-        for img in resize_img_feats[i]:
-            col_img = img if col_img is None else np.concatenate((col_img, img), axis=0)
-        
-        final_img = col_img if final_img is None else np.concatenate((final_img, col_img), axis=1)
+    for testing_text_id, img in enumerate(img_feats):
+        path = os.path.join(img_dir, 'sample_{}_{}.jpg'.format(testing_text_id+1, sample_id+1))
+        img = misc.imresize(img, [64, 64, 3])
+        misc.imsave(path, img)
     
-    misc.imsave(path, final_img)
+# def dump_test_img(img_dir, img_feats, name):
+#     if not os.path.exists(img_dir):
+#         os.makedirs(img_dir)
+
+#     img_feats = (img_feats + 1.)/2 * 255.
+#     img_feats = np.array(img_feats, dtype=np.uint8)
+#     resize_img_feats = []
+#     for i in range(img_feats.shape[0]):
+#         col_img = []
+#         for img in img_feats[i]:
+#             col_img.append(misc.imresize(img, [64, 64, 3]))
+#         resize_img_feats.append(col_img)
+#     resize_img_feats = np.array(resize_img_feats, dtype=np.uint8)
+    
+#     path = os.path.join(img_dir, '{}_sample.jpg'.format(name))
+
+#     final_img = None
+#     for i in range(resize_img_feats.shape[0]):
+#         col_img = None
+#         for img in resize_img_feats[i]:
+#             col_img = img if col_img is None else np.concatenate((col_img, img), axis=0)
+        
+#         final_img = col_img if final_img is None else np.concatenate((final_img, col_img), axis=1)
+    
+#     misc.imsave(path, final_img)

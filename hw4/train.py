@@ -6,7 +6,7 @@ import numpy as np
 
 import utils
 from utils import Data
-from improved_WGAN import Improved_WGAN
+from gan import GAN
 
 tf.flags.DEFINE_integer("iter", 1000000, "number of training iter")
 tf.flags.DEFINE_integer("z_dim", 100, "noise dimension")
@@ -25,13 +25,13 @@ tf.flags.DEFINE_string("test_path", "./data/sample_testing_text.txt", "sample te
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-def main():
+def train():
     img_feat, tag_feat = utils.load_train_data(FLAGS.train_dir, FLAGS.tag_path)
     test_tag_feat = utils.load_test(FLAGS.test_path)
 
     data = Data(img_feat, tag_feat, test_tag_feat, FLAGS.z_dim)
 
-    model = Improved_WGAN(data, FLAGS)
+    model = GAN(data, FLAGS)
 
     model.build_model()
 
@@ -39,4 +39,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    train()

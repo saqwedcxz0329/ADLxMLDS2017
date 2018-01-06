@@ -4,7 +4,7 @@ import numpy as np
 
 import utils
 from utils import Data
-from improved_WGAN import Improved_WGAN
+from gan import GAN
 
 tf.flags.DEFINE_integer("iter", 1000000, "number of training iter")
 tf.flags.DEFINE_integer("z_dim", 100, "noise dimension")
@@ -33,16 +33,13 @@ def generate():
 
     data = Data(img_feat, tag_feat, test_tag_feat, FLAGS.z_dim)
 
-    model = Improved_WGAN(data, FLAGS)
+    model = GAN(data, FLAGS)
 
     model.build_model()
 
-    for i in range(500, 50500, 500):
-        checkpoint_prefix = '{}-{}'.format(FLAGS.model_name, i)
+    model.restore(FLAGS.model_path, FLAGS.model_name)
 
-        model.restore(FLAGS.model_path, checkpoint_prefix)
-
-        model.gen_test_img(i)
+    model.gen_test_img()
 
 if __name__ == '__main__':
     generate()
