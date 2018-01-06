@@ -14,8 +14,8 @@ class Improved_WGAN(object):
 		self.sess = tf.Session(config = config)
 		self.data = data
 		self.FLAGS = FLAGS
-		self.img_row = self.data.img_feat.shape[1]
-		self.img_col = self.data.img_feat.shape[2]
+		self.img_row = self.data.img_feat.shape[1] if self.data.img_feat is not None else 64
+		self.img_col = self.data.img_feat.shape[2] if self.data.img_feat is not None else 64
 		self.alpha = 10.
 		self.d_epoch = 1
 		self.gen_path()
@@ -158,4 +158,15 @@ class Improved_WGAN(object):
 
 		utils.dump_img(self.FLAGS.img_dir, f_imgs, iters)
 
+	def restore(self, model_path, model_name):
+		self.saver.restore(self.sess, os.path.join(model_path, model_name))
 
+	def gen_img(self):
+		
+		np.random.seed(0)
+		z = None
+		feed_dict = {
+			self.seq:self.data.test_tag_one_hot,
+			self.z:z
+		}
+		f_imgs = self.sess.run(self.sampler, feed_dict=feed_dict)

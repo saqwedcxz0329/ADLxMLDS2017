@@ -26,13 +26,14 @@ class Data(object):
         # train data
         self.img_feat = img_feat
         self.tag_feat = tag_feat
-        self.data_size = len(img_feat)
-        self.wrong_idx = np.random.permutation(np.arange(self.data_size))
+        if img_feat is not None and tag_feat is not None:
+            self.data_size = len(img_feat)
+            self.wrong_idx = np.random.permutation(np.arange(self.data_size))
+            self.tag_one_hot = []
+            self.gen_info()
+
         self.eyes_color = eyes_color
         self.hair_color = hair_color
-        self.type = []
-        self.tag_one_hot = []
-        self.gen_info()
 
         # noise
         self.z_sampler = stats.truncnorm((-1 - 0.) / 1., (1 - 0.) / 1., loc=0., scale=1)
@@ -43,7 +44,7 @@ class Data(object):
 
         # test data
         self.test_tag_one_hot = self.gen_test_hot(test_tag_feat)
-        self.fixed_z = self.next_noise_batch(len(self.test_tag_one_hot), z_dim)
+        self.fixed_z = self.fixed_seed(len(self.test_tag_one_hot), z_dim)
 
     def gen_test_hot(self, test_intput):
         test_hot = []
@@ -57,17 +58,6 @@ class Data(object):
         return np.array(test_hot)
 
     def gen_info(self):
-        for tags in self.tag_feat:
-            if tags[0] == UNK:
-                # eyes: unk
-                self.type.append(1)
-            elif tags[1] == UNK:
-                # hair: unk
-                self.type.append(2)
-            else:
-                self.type.append(0)
-        self.type = np.array(self.type)
-        
         for tags in self.tag_feat:
             eyes_hot = np.zeros([len(self.eyes_color)])
             eyes_hot[self.eyes_color.index(tags[0])] = 1
@@ -83,28 +73,29 @@ class Data(object):
             idx = np.random.permutation(np.arange(self.data_size))
             self.img_feat = self.img_feat[idx]
             self.tag_one_hot = self.tag_one_hot[idx]
-            self.type = self.type[idx]
-            self.w_idx = np.random.permutation(np.arange(self.data_size))
+            self.wrong_idx = np.random.permutation(np.arange(self.data_size))
 
         if self.current + size < self.data_size:
-            img, tag_one, d_t, widx = \
+            img, tag_one, widx = \
                 self.img_feat[self.current:self.current+size], \
                 self.tag_one_hot[self.current:self.current+size], \
-                self.type[self.current:self.current+size], \
-                self.w_idx[self.current:self.current+size]
+                self.wrong_idx[self.current:self.current+size]
             self.current += size
 
         else:
-            img, tag_one, d_t, widx = \
+            img, tag_one, widx = \
                 self.img_feat[self.current:], \
                 self.tag_one_hot[self.current:], \
-                self.type[self.current:], \
-                self.w_idx[self.current:]
+                self.wrong_idx[self.current:]
             self.current = 0
 
         return img, tag_one, self.img_feat[widx], self.tag_one_hot[widx]
 
     def next_noise_batch(self, size, dim):
+        return np.random.normal(0.0, 1.0, [size, dim])
+
+    def fixed_seed(sefl, size, dim):
+        np.random.seed(0)
         return np.random.normal(0.0, 1.0, [size, dim])
 
 def load_train_data(train_dir, tag_path):
