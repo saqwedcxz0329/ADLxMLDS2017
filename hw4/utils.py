@@ -25,7 +25,7 @@ class Data(object):
     def __init__(self, img_feat, tag_feat, test_tag_feat, z_dim):
         self.eyes_color = eyes_color
         self.hair_color = hair_color
-
+        
         # train data
         self.img_feat = img_feat
         self.tag_feat = tag_feat
@@ -124,10 +124,11 @@ def load_train_data(train_dir, tag_path):
                 row_idx = row[0]
                 img_path = os.path.join(train_dir,'{}.jpg'.format(row_idx))
                 img = misc.imread(img_path)
-                img = misc.imresize(img, [64, 64, 3])
+                # img = misc.imresize(img, [64, 64, 3])
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
+                '''
                 m_img = np.fliplr(img)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
@@ -139,6 +140,7 @@ def load_train_data(train_dir, tag_path):
                 img_n5 = misc.imrotate(img, -5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_n5)
+                '''
                 
     img_feat = np.array(img_feat, dtype='float32')/127.5 - 1.
     return img_feat, tag_feat
@@ -165,11 +167,13 @@ def dump_img(img_dir, img_feats, iters):
 
     img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
-    #img_feats = misc.imresize(img_feats, [64, 64, 3])
+    resize_img_feats = []
+    for img in img_feats:
+        resize_img_feats.append(misc.imresize(img, [64, 64, 3]))
     
     path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
     
-    img_feats = img_feats[:9]
+    resize_img_feats = resize_img_feats[:9]
     row = 3
     col = 3
     final_img = None
@@ -177,7 +181,7 @@ def dump_img(img_dir, img_feats, iters):
         row_img = None
         for j in range(col):
             idx = i * row + j
-            img = img_feats[idx]
+            img = resize_img_feats[idx]
             if row_img is None:
                 row_img = img
             else:
@@ -195,14 +199,20 @@ def dump_test_img(img_dir, img_feats, name):
 
     img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
-    #img_feats = misc.imresize(img_feats, [64, 64, 3])
+    resize_img_feats = []
+    for i in range(img_feats.shape[0]):
+        col_img = []
+        for img in img_feats[i]:
+            col_img.append(misc.imresize(img, [64, 64, 3]))
+        resize_img_feats.append(col_img)
+    resize_img_feats = np.array(resize_img_feats, dtype=np.uint8)
     
     path = os.path.join(img_dir, '{}_sample.jpg'.format(name))
 
     final_img = None
-    for i in range(img_feats.shape[0]):
+    for i in range(resize_img_feats.shape[0]):
         col_img = None
-        for img in img_feats[i]:
+        for img in resize_img_feats[i]:
             col_img = img if col_img is None else np.concatenate((col_img, img), axis=0)
         
         final_img = col_img if final_img is None else np.concatenate((final_img, col_img), axis=1)
