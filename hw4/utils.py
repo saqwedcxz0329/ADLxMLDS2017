@@ -23,6 +23,9 @@ eyes_color = [UNK, 'gray', 'black', 'orange',
 
 class Data(object):
     def __init__(self, img_feat, tag_feat, test_tag_feat, z_dim):
+        self.eyes_color = eyes_color
+        self.hair_color = hair_color
+        
         # train data
         self.img_feat = img_feat
         self.tag_feat = tag_feat
@@ -31,9 +34,6 @@ class Data(object):
             self.wrong_idx = np.random.permutation(np.arange(self.data_size))
             self.tag_one_hot = []
             self.gen_info()
-
-        self.eyes_color = eyes_color
-        self.hair_color = hair_color
 
         # noise
         self.z_sampler = stats.truncnorm((-1 - 0.) / 1., (1 - 0.) / 1., loc=0., scale=1)
@@ -128,6 +128,7 @@ def load_train_data(train_dir, tag_path):
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
+                '''
                 m_img = np.fliplr(img)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(m_img)
@@ -139,6 +140,7 @@ def load_train_data(train_dir, tag_path):
                 img_n5 = misc.imrotate(img, -5)
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img_n5)
+                '''
                 
     img_feat = np.array(img_feat, dtype='float32')/127.5 - 1.
     return img_feat, tag_feat
