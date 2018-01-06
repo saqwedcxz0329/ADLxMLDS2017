@@ -23,7 +23,7 @@ tf.flags.DEFINE_string("test_path", "./data/testing_text.txt", "sample test form
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-model_path = './models/no_rotate_96'
+model_path = './models/normal/checkpoints/'
 model_name = 'model'
 
 def generate():

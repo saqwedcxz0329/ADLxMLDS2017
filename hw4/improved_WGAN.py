@@ -165,7 +165,7 @@ class Improved_WGAN(object):
 
 		size = len(self.data.test_tag_one_hot)
 		z_dim = self.FLAGS.z_dim
-		np.random.seed(0)
+		np.random.seed(2)
 
 		img_feats = []
 
