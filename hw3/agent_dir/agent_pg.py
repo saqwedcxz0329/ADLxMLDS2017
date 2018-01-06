@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.misc
+from memory_profiler import profile
 
 from agent_dir.agent import Agent
 from environment import Environment
