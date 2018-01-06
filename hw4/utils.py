@@ -124,7 +124,7 @@ def load_train_data(train_dir, tag_path):
                 row_idx = row[0]
                 img_path = os.path.join(train_dir,'{}.jpg'.format(row_idx))
                 img = misc.imread(img_path)
-                img = misc.imresize(img, [64, 64, 3])
+                # img = misc.imresize(img, [64, 64, 3])
                 tag_feat.append([text_content[EYES], text_content[HAIR]])
                 img_feat.append(img)
 
@@ -165,11 +165,13 @@ def dump_img(img_dir, img_feats, iters):
 
     img_feats = (img_feats + 1.)/2 * 255.
     img_feats = np.array(img_feats, dtype=np.uint8)
-    #img_feats = misc.imresize(img_feats, [64, 64, 3])
+    resize_img_feats = []
+    for img in img_feats:
+        resize_img_feats.append(misc.imresize(img, [64, 64, 3]))
     
     path = os.path.join(img_dir, 'iters_{}_sample.jpg'.format(iters))
     
-    img_feats = img_feats[:9]
+    resize_img_feats = resize_img_feats[:9]
     row = 3
     col = 3
     final_img = None
@@ -177,7 +179,7 @@ def dump_img(img_dir, img_feats, iters):
         row_img = None
         for j in range(col):
             idx = i * row + j
-            img = img_feats[idx]
+            img = resize_img_feats[idx]
             if row_img is None:
                 row_img = img
             else:
@@ -192,3 +194,6 @@ def dump_img(img_dir, img_feats, iters):
     # for idx, img_feat in enumerate(img_feats):
     #     path = os.path.join(img_dir, 'iters_{}_sample_{}.jpg'.format(iters, idx))
     #     misc.imsave(path, img_feat)
+
+def dump_test_img():
+    pass

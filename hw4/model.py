@@ -22,51 +22,51 @@ class Generator(object):
 
 			noise_vector = tf.concat([tags_vectors, z], axis=1)
 
-			fc2 = tc.layers.fully_connected(
-				noise_vector, 4*4*256,
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+			out = tf.layers.dense(
+				noise_vector, 6*6*256,
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			fc2 = tf.layers.batch_normalization(fc2, training=train)
-			fc2 = tf.reshape(fc2, [-1, 4, 4, 256])
-			fc2 = tf.nn.relu(fc2)
+			out = tf.layers.batch_normalization(out, training=train)
+			out = tf.reshape(out, [-1, 6, 6, 256])
+			out = tf.nn.relu(out)
 
-			conv1 = tc.layers.convolution2d_transpose(
-				fc2, 128, [5, 5], [2, 2],
+			out = tf.layers.conv2d_transpose(
+				out, 128, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv1 = tf.layers.batch_normalization(conv1, training=train)
-			conv1 = tf.nn.relu(conv1)
+			out = tf.layers.batch_normalization(out, training=train)
+			out = tf.nn.relu(out)
 
-			conv2 = tc.layers.convolution2d_transpose(
-				conv1, 64, [5, 5], [2, 2],
+			out = tf.layers.conv2d_transpose(
+				out, 64, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv2 = tf.layers.batch_normalization(conv2, training=train)
-			conv2 = tf.nn.relu(conv2)
+			out = tf.layers.batch_normalization(out, training=train)
+			out = tf.nn.relu(out)
 			
-			conv3 = tc.layers.convolution2d_transpose(
-				conv2, 32, [5, 5], [2, 2],
+			out = tf.layers.conv2d_transpose(
+				out, 32, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv3 = tf.layers.batch_normalization(conv3, training=train)
-			conv3 = tf.nn.relu(conv3)
+			out = tf.layers.batch_normalization(out, training=train)
+			out = tf.nn.relu(out)
 
-			conv4 = tc.layers.convolution2d_transpose(
-				conv3, 3, [5, 5], [2, 2],
+			out = tf.layers.conv2d_transpose(
+				out, 3, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv4 = tf.nn.tanh(conv4)
+			out = tf.nn.tanh(out)
 			
-			return conv4
+			return out
 
 	@property
 	def vars(self):
@@ -87,56 +87,65 @@ class Discriminator(object):
 			if reuse == True:
 				scope.reuse_variables()
 
-			conv1 = tc.layers.convolution2d(
+			out = tf.layers.conv2d(
 				img, 32, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv1 = tf.layers.batch_normalization(conv1, training=True)
-			conv1 = leaky_relu(conv1)
+			out = tf.layers.batch_normalization(out, training=True)
+			out = leaky_relu(out)
 
-			conv2 = tc.layers.convolution2d(
-				conv1, 64, [5, 5], [2, 2],
+			out = tf.layers.conv2d(
+				out, 64, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv2 = tf.layers.batch_normalization(conv2, training=True)
-			conv2 = leaky_relu(conv2)
+			out = tf.layers.batch_normalization(out, training=True)
+			out = leaky_relu(out)
 			
-			conv3 = tc.layers.convolution2d(
-				conv2, 128, [5, 5], [2, 2],
+			out = tf.layers.conv2d(
+				out, 128, [5, 5], [2, 2],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv3 = tf.layers.batch_normalization(conv3, training=True)
-			conv3 = leaky_relu(conv3)
+			out = tf.layers.batch_normalization(out, training=True)
+			out = leaky_relu(out)
+
+			out = tf.layers.conv2d(
+				out, 256, [5, 5], [2, 2],
+				padding='same',
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
+				)
+			out = tf.layers.batch_normalization(out, training=True)
+			out = leaky_relu(out)
 
 			tags_vectors = tf.expand_dims(tf.expand_dims(tags_vectors, 1), 2)
-			tags_vectors = tf.tile(tags_vectors, [1, 8, 8, 1])
+			tags_vectors = tf.tile(tags_vectors, [1, 6, 6, 1])
 
-			condition_info = tf.concat([conv3, tags_vectors], axis=-1)
+			condition_info = tf.concat([out, tags_vectors], axis=-1)
 
-			conv4 = tc.layers.convolution2d(
-				condition_info, 128, [1, 1], [1, 1],
+			out = tf.layers.conv2d(
+				condition_info, 256, [1, 1], [1, 1],
 				padding='same',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			conv4 = tf.layers.batch_normalization(conv4, training=True)
-			conv4 = leaky_relu(conv4)
+			out = tf.layers.batch_normalization(out, training=True)
+			out = leaky_relu(out)
 
-			conv5 = tc.layers.convolution2d(
-				conv4, 1, [8, 8], [1, 1],
+			out = tf.layers.conv2d(
+				out, 1, [6, 6], [1, 1],
 				padding='valid',
-				weights_initializer=tf.random_normal_initializer(stddev=0.02),
-				activation_fn=None
+				kernel_initializer=tf.random_normal_initializer(stddev=0.02),
+				activation=None
 				)
-			output = tf.squeeze(conv5, [1, 2, 3])
+			out = tf.squeeze(out, [1, 2, 3])
 
-			return output
+			return out
 	@property
 	def vars(self):
 		return [var for var in tf.global_variables() if "d_net" in var.name]
