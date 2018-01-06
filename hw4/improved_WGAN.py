@@ -18,7 +18,6 @@ class Improved_WGAN(object):
 		self.img_col = self.data.img_feat.shape[2] if self.data.img_feat is not None else 64
 		self.alpha = 10.
 		self.d_epoch = 1
-		self.gen_path()
 
 	def gen_path(self):
 		# Output directory for models and summaries
@@ -93,6 +92,8 @@ class Improved_WGAN(object):
 		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
 
 	def train(self):
+		self.gen_path()
+		
 		print("Start training WGAN...\n")
 
 		for t in range(self.FLAGS.iter):

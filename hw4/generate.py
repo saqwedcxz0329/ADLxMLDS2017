@@ -20,8 +20,8 @@ tf.flags.DEFINE_string("train_dir", "./data/faces", "training data directory")
 tf.flags.DEFINE_string("tag_path", "./data/tags_clean.csv", "training data tags")
 tf.flags.DEFINE_string("test_path", "./data/testing_text.txt", "sample test format")
 
-tf.flags.DEFINE_integer("model_path", "./models", "model folder")
-tf.flags.DEFINE_integer("model_name", "model", "model name")
+tf.flags.DEFINE_string("model_path", "./models", "model folder")
+tf.flags.DEFINE_string("model_name", "model", "model name")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -38,9 +38,9 @@ def generate():
     model.build_model()
 
     for i in range(500, 50500, 500):
-        checkpoint_prefix = '{}-{}'.format(FLAG.model_name, i)
+        checkpoint_prefix = '{}-{}'.format(FLAGS.model_name, i)
 
-        model.restore(FLAG.model_path, checkpoint_prefix)
+        model.restore(FLAGS.model_path, checkpoint_prefix)
 
         model.gen_test_img(i)
 
