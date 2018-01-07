@@ -1,1 +1,1 @@
-python generate.py --test_path $1
+python3 generate.py --test_path $1
